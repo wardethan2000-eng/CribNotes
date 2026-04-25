@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ShareRole {
+  CAREGIVER
+  VIEWER
+}
+
+enum LogType {
+  WAKE
+  FEED
+  DIAPER
+}
+
+enum FeedUnit {
+  OZ
+  ML
+}
+
+enum FeedType {
+  BREAST
+  BOTTLE
+  BOTH
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  emailVerified DateTime?
+  onboardingDone Boolean @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  ownedChildren Child[]      @relation("ChildOwner")
+  sharedAccess   ChildShare[]
+  logs           Log[]
+  sessions     Session[]
+  accounts      Account[]
+}
+
+model Child {
+  id        String   @id @default(uuid())
+  name      String
+  birthDate DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation("ChildOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  sharedWith ChildShare[]
+  logs       Log[]
+}
+
+model ChildShare {
+  id        String   @id @default(uuid())
+  childId   String
+  userId    String?
+  email     String
+  role      ShareRole @default(CAREGIVER)
+  token     String    @unique
+  accepted  Boolean   @default(false)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Log {
+  id         String   @id @default(uuid())
+  childId    String
+  userId     String
+  type       LogType
+  occurredAt DateTime @default(now())
+  notes      String?
+
+  feedAmount Float?
+  feedUnit   FeedUnit?
+  feedType   FeedType?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([childId, deletedAt, occurredAt])
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id         String   @id @default(uuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
