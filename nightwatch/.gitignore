@@ -38,3 +38,7 @@ next-env.d.ts
 
 # prisma
 prisma/migrations/
+
+# PWA generated files
+public/sw.js
+public/workbox-*.js
