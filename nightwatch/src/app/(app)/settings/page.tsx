@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, Plus, Download, ChevronDown, ChevronUp, UserPlus } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, ChevronDown, ChevronUp, UserPlus, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
+import { usePwaInstall } from "@/lib/usePwaInstall";
 import { formatChildAge, formatDate } from "@/lib/utils";
 
 async function api(url: string, method = "GET", body?: unknown) {
@@ -201,9 +202,37 @@ export default function SettingsPage() {
     }
   };
 
+  const { canInstall, isIos, isInstalled, install } = usePwaInstall();
+
   return (
     <div className="p-4 space-y-8 pb-24">
       <h1 className="font-display text-2xl font-bold text-text-primary">Settings</h1>
+
+      {!isInstalled && (
+        <section className="space-y-4">
+          <h2 className="font-display text-lg font-semibold text-text-primary">Install App</h2>
+          <div className="bg-surface rounded-2xl p-4">
+            {canInstall ? (
+              <>
+                <p className="text-sm text-text-secondary mb-3">Install NightWatch on your device for quick access and offline support.</p>
+                <Button full onClick={install}>
+                  <Smartphone size={16} className="mr-2" /> Install App
+                </Button>
+              </>
+            ) : isIos ? (
+              <div className="text-sm text-text-secondary space-y-2">
+                <p>To install NightWatch on iOS:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Tap the <strong>Share</strong> button in Safari</li>
+                  <li>Tap <strong>Add to Home Screen</strong></li>
+                </ol>
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">Add this site to your home screen from your browser menu to install the app.</p>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-4">
         <h2 className="font-display text-lg font-semibold text-text-primary">My Profile</h2>
