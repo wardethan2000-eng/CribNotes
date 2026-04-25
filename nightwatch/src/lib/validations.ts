@@ -38,6 +38,7 @@ export const createLogSchema = z.object({
   feedAmount: z.number().min(0).optional(),
   feedUnit: z.enum(["OZ", "ML"]).optional(),
   feedType: z.enum(["BREAST", "BOTTLE", "BOTH"]).optional(),
+  diaperType: z.enum(["PEE", "POOP", "BOTH"]).optional(),
 });
 
 export const updateLogSchema = z.object({
@@ -46,6 +47,7 @@ export const updateLogSchema = z.object({
   feedAmount: z.number().min(0).optional(),
   feedUnit: z.enum(["OZ", "ML"]).optional(),
   feedType: z.enum(["BREAST", "BOTTLE", "BOTH"]).optional(),
+  diaperType: z.enum(["PEE", "POOP", "BOTH"]).optional(),
 });
 
 export const inviteSchema = z.object({

@@ -24,6 +24,9 @@ export function LogRow({ log, onEdit, onDelete }: LogRowProps) {
     if (log.type === "FEED" && log.feedAmount) {
       return `${log.feedAmount} ${log.feedUnit?.toLowerCase() || "oz"}`;
     }
+    if (log.type === "DIAPER" && log.diaperType) {
+      return log.diaperType === "PEE" ? "Pee" : log.diaperType === "POOP" ? "Poop" : "Pee + poop";
+    }
     return "";
   };
 

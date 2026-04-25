@@ -16,17 +16,20 @@ export default function RecentActivity() {
   const selectedChildId = useAppStore((s) => s.selectedChildId);
   const queryClient = useQueryClient();
 
-  const { data: children } = useQuery({
+  const { data: childrenData } = useQuery({
     queryKey: ["children"],
     queryFn: () => fetch("/api/children").then((r) => r.json()),
   });
 
-  const { data: logs = [], isLoading } = useQuery({
+  const { data: logsData, isLoading } = useQuery({
     queryKey: ["logs", selectedChildId, "recent"],
     queryFn: () =>
       fetch(`/api/logs?childId=${selectedChildId}&limit=5`).then((r) => r.json()),
     enabled: !!selectedChildId,
   });
+
+  const children = Array.isArray(childrenData) ? childrenData : [];
+  const logs = Array.isArray(logsData?.logs) ? logsData.logs : [];
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => fetch(`/api/logs/${id}`, { method: "DELETE" }).then((r) => r.json()),
@@ -45,11 +48,14 @@ export default function RecentActivity() {
     },
   });
 
-  const childName = (children as any[])?.find((c: any) => c.id === selectedChildId)?.name || "Baby";
+  const childName = children.find((c: any) => c.id === selectedChildId)?.name || "Baby";
 
   const getDetail = (log: any) => {
     if (log.type === "FEED" && log.feedAmount) {
       return `${log.feedAmount} ${log.feedUnit?.toLowerCase() || "oz"}`;
+    }
+    if (log.type === "DIAPER" && log.diaperType) {
+      return log.diaperType === "PEE" ? "Pee" : log.diaperType === "POOP" ? "Poop" : "Pee + poop";
     }
     return "";
   };

@@ -1,13 +1,17 @@
 {
+  "id": "/",
   "name": "NightWatch",
   "short_name": "NightWatch",
   "description": "Track your baby's night activity",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#0b1120",
   "theme_color": "#0b1120",
   "icons": [
+    { "src": "/icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
     { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }

@@ -29,6 +29,12 @@ enum FeedType {
   BOTH
 }
 
+enum DiaperType {
+  PEE
+  POOP
+  BOTH
+}
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -86,6 +92,7 @@ model Log {
   feedAmount Float?
   feedUnit   FeedUnit?
   feedType   FeedType?
+  diaperType DiaperType?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

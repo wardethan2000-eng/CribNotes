@@ -8,6 +8,7 @@ import { useAppStore } from "@/lib/store";
 import { formatChildAge } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface OnboardingFlowProps {
   userName: string;
@@ -21,6 +22,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
   const [inviteRole, setInviteRole] = useState<"CAREGIVER" | "VIEWER">("CAREGIVER");
   const [createdChildId, setCreatedChildId] = useState<string | null>(null);
   const router = useRouter();
+  const { update } = useSession();
   const { setSelectedChildId, setOnboarded } = useAppStore();
 
   const handleAddChild = async (e: React.FormEvent) => {
@@ -49,11 +51,12 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
       return;
     }
     try {
-      await fetch("/api/invite", {
+      const res = await fetch(`/api/children/${createdChildId}/shares`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId: createdChildId, email: inviteEmail, role: inviteRole }),
+        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
+      if (!res.ok) throw new Error("Failed");
       toast.success("Invite sent!");
     } catch {
       toast.error("Failed to send invite");
@@ -63,13 +66,16 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
 
   const finishOnboarding = async () => {
     try {
-      await fetch("/api/user/me", {
+      const res = await fetch("/api/user/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingDone: true }),
       });
+      if (!res.ok) throw new Error("Failed");
       setOnboarded(true);
-      router.push("/");
+      await update();
+      router.replace("/");
+      router.refresh();
     } catch {
       toast.error("Something went wrong");
     }

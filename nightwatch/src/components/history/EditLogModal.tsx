@@ -20,6 +20,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
   const [feedAmount, setFeedAmount] = useState<string>("");
   const [feedUnit, setFeedUnit] = useState<"OZ" | "ML">("OZ");
   const [feedType, setFeedType] = useState<"BREAST" | "BOTTLE" | "BOTH">("BOTTLE");
+  const [diaperType, setDiaperType] = useState<"PEE" | "POOP" | "BOTH">("PEE");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -29,6 +30,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
       setFeedAmount(log.feedAmount != null ? String(log.feedAmount) : "");
       setFeedUnit(log.feedUnit || "OZ");
       setFeedType(log.feedType || "BOTTLE");
+      setDiaperType(log.diaperType || "PEE");
       setNotes(log.notes || "");
     }
   }, [log, open]);
@@ -45,6 +47,9 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
         data.feedAmount = feedAmount ? parseFloat(feedAmount) : undefined;
         data.feedUnit = feedUnit;
         data.feedType = feedType;
+      }
+      if (log.type === "DIAPER") {
+        data.diaperType = diaperType;
       }
       const res = await fetch(`/api/logs/${log.id}`, {
         method: "PATCH",
@@ -88,6 +93,19 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
               </div>
             </div>
           </>
+        )}
+
+        {log?.type === "DIAPER" && (
+          <div>
+            <p className="text-sm text-text-secondary mb-2">Diaper Type</p>
+            <div className="grid grid-cols-3 gap-2">
+              {(["PEE", "POOP", "BOTH"] as const).map((t) => (
+                <button key={t} type="button" onClick={() => setDiaperType(t)} className={`px-3 py-2 rounded-2xl text-sm ${diaperType === t ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>
+                  {t === "PEE" ? "Pee" : t === "POOP" ? "Poop" : "Both"}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         <div>

@@ -23,18 +23,28 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const body = await request.json();
     const data = updateLogSchema.parse(body);
 
-    const updated = await prisma.log.update({
-      where: { id: params.id },
-      data: {
-        ...(data.occurredAt && { occurredAt: new Date(data.occurredAt) }),
-        ...(data.notes !== undefined && { notes: data.notes }),
-        ...(data.feedAmount !== undefined && { feedAmount: data.feedAmount }),
-        ...(data.feedUnit && { feedUnit: data.feedUnit }),
-        ...(data.feedType && { feedType: data.feedType }),
-      },
-    });
+    const updateData = {
+      ...(data.occurredAt && { occurredAt: new Date(data.occurredAt) }),
+      ...(data.notes !== undefined && { notes: data.notes }),
+      ...(data.feedAmount !== undefined && { feedAmount: data.feedAmount }),
+      ...(data.feedUnit && { feedUnit: data.feedUnit }),
+      ...(data.feedType && { feedType: data.feedType }),
+    };
 
-    return NextResponse.json(updated);
+    const updated = Object.keys(updateData).length
+      ? await prisma.log.update({
+      where: { id: params.id },
+          data: updateData,
+        })
+      : log;
+
+    if (data.diaperType) {
+      await prisma.$executeRaw`
+        UPDATE "Log" SET "diaperType" = ${data.diaperType}::"DiaperType" WHERE id = ${params.id}
+      `;
+    }
+
+    return NextResponse.json({ ...updated, diaperType: data.diaperType ?? null });
   } catch (error: any) {
     if (error.name === "ZodError") {
       return NextResponse.json({ error: error.errors }, { status: 400 });

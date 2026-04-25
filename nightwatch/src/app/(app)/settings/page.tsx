@@ -104,7 +104,7 @@ export default function SettingsPage() {
 
   const sendInvite = useMutation({
     mutationFn: ({ childId, email, role }: { childId: string; email: string; role: string }) =>
-      api("/api/invite", "POST", { childId, email, role }),
+      api(`/api/children/${childId}/shares`, "POST", { email, role }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shares"] });
       setShowInvite(null);
@@ -171,10 +171,11 @@ export default function SettingsPage() {
       const ws2 = XLSX.utils.aoa_to_sheet([feedHeaders, ...feedRows]);
       XLSX.utils.book_append_sheet(wb, ws2, "Feed Log");
 
-      const diaperHeaders = ["Date", "Time", "Notes", "Logged By"];
+      const diaperHeaders = ["Date", "Time", "Type", "Notes", "Logged By"];
       const diaperRows = data.diapers.map((l: any) => [
         new Date(l.occurredAt).toLocaleDateString(),
         new Date(l.occurredAt).toLocaleTimeString(),
+        l.diaperType === "PEE" ? "Pee" : l.diaperType === "POOP" ? "Poop" : l.diaperType === "BOTH" ? "Pee + poop" : "",
         l.notes || "",
         l.userName || "",
       ]);

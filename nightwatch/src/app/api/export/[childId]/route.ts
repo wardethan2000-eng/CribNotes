@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessChild } from "@/lib/access";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: Request, { params }: { params: { childId: string } }) {
   const session = await auth();
@@ -36,6 +37,12 @@ export async function GET(request: Request, { params }: { params: { childId: str
     const feeds = logs.filter((l) => l.type === "FEED");
     const diapers = logs.filter((l) => l.type === "DIAPER");
     const wakes = logs.filter((l) => l.type === "WAKE");
+    const diaperTypes = diapers.length
+      ? await prisma.$queryRaw<{ id: string; diaperType: string | null }[]>(
+          Prisma.sql`SELECT id, "diaperType" FROM "Log" WHERE id IN (${Prisma.join(diapers.map((item) => item.id))})`
+        )
+      : [];
+    const diaperTypeById = new Map(diaperTypes.map((item) => [item.id, item.diaperType]));
 
     const totalFeeds = feeds.length;
     const totalVolume = feeds.reduce((sum, f) => sum + (f.feedAmount || 0), 0);
@@ -63,6 +70,7 @@ export async function GET(request: Request, { params }: { params: { childId: str
       diapers: diapers.map((l) => ({
         id: l.id,
         occurredAt: l.occurredAt,
+        diaperType: diaperTypeById.get(l.id) ?? null,
         notes: l.notes,
         userName: l.user?.name,
       })),

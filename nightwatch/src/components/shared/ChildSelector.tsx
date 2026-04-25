@@ -5,16 +5,21 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { formatChildAge } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 export function ChildSelector() {
   const selectedChildId = useAppStore((s) => s.selectedChildId);
   const setSelectedChildId = useAppStore((s) => s.setSelectedChildId);
 
-  const { data: children = [], isLoading } = useQuery({
+  const { data: childrenData, isLoading } = useQuery({
     queryKey: ["children"],
     queryFn: () => fetch("/api/children").then((r) => r.json()),
   });
+
+  const children = useMemo(
+    () => (Array.isArray(childrenData) ? childrenData : []),
+    [childrenData]
+  );
 
   useEffect(() => {
     if (children.length > 0 && !selectedChildId) {

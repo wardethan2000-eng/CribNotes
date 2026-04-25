@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import QuickLogButton from "@/components/dashboard/QuickLogButton";
 import FeedDetailsSheet from "@/components/dashboard/FeedDetailsSheet";
+import DiaperDetailsSheet from "@/components/dashboard/DiaperDetailsSheet";
 import { useAppStore } from "@/lib/store";
 import { format } from "date-fns";
 
@@ -14,8 +15,8 @@ export default function QuickLogGrid() {
   const selectedChildId = useAppStore((s) => s.selectedChildId);
   const [feedSheetOpen, setFeedSheetOpen] = useState(false);
   const [feedLogId, setFeedLogId] = useState<string | null>(null);
-
-  const { data: children } = useQueryClient().getQueryData(["children"]) as any;
+  const [diaperSheetOpen, setDiaperSheetOpen] = useState(false);
+  const [diaperLogId, setDiaperLogId] = useState<string | null>(null);
 
   const logMutation = useMutation({
     mutationFn: (data: { type: string; childId: string; occurredAt: string }) =>
@@ -45,10 +46,12 @@ export default function QuickLogGrid() {
           if (type === "FEED") {
             setFeedLogId(data.id);
             setFeedSheetOpen(true);
+          } else if (type === "DIAPER") {
+            setDiaperLogId(data.id);
+            setDiaperSheetOpen(true);
           } else {
             const messages: Record<string, string> = {
               WAKE: `Logged: woke up at ${time}`,
-              DIAPER: `Logged: diaper change at ${time}`,
             };
             toast.success(messages[type]);
           }
@@ -88,6 +91,11 @@ export default function QuickLogGrid() {
         open={feedSheetOpen}
         onClose={() => setFeedSheetOpen(false)}
         logId={feedLogId}
+      />
+      <DiaperDetailsSheet
+        open={diaperSheetOpen}
+        onClose={() => setDiaperSheetOpen(false)}
+        logId={diaperLogId}
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createLogSchema } from "@/lib/validations";
 import { canAccessChild, canWriteToChild } from "@/lib/access";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -54,8 +55,17 @@ export async function GET(request: Request) {
     const hasMore = logs.length > limit;
     const items = hasMore ? logs.slice(0, limit) : logs;
     const nextCursor = hasMore ? items[items.length - 1].id : null;
+    const diaperTypes = items.length
+      ? await prisma.$queryRaw<{ id: string; diaperType: string | null }[]>(
+          Prisma.sql`SELECT id, "diaperType" FROM "Log" WHERE id IN (${Prisma.join(items.map((item) => item.id))})`
+        )
+      : [];
+    const diaperTypeById = new Map(diaperTypes.map((item) => [item.id, item.diaperType]));
 
-    return NextResponse.json({ logs: items, nextCursor });
+    return NextResponse.json({
+      logs: items.map((item) => ({ ...item, diaperType: diaperTypeById.get(item.id) ?? null })),
+      nextCursor,
+    });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -87,6 +97,13 @@ export async function POST(request: Request) {
         feedType: data.feedType,
       },
     });
+
+    if (data.diaperType) {
+      await prisma.$executeRaw`
+        UPDATE "Log" SET "diaperType" = ${data.diaperType}::"DiaperType" WHERE id = ${log.id}
+      `;
+      return NextResponse.json({ ...log, diaperType: data.diaperType });
+    }
 
     return NextResponse.json(log);
   } catch (error: any) {
