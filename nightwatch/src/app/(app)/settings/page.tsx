@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, Plus, Download, ChevronDown, ChevronUp, UserPlus, Smartphone } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, UserPlus, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -46,7 +46,6 @@ export default function SettingsPage() {
   const [editChildDob, setEditChildDob] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [accountDeleteConfirm, setAccountDeleteConfirm] = useState(false);
-  const [expandedChild, setExpandedChild] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"CAREGIVER" | "VIEWER">("CAREGIVER");
@@ -353,16 +352,7 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <button
-              onClick={() => setExpandedChild(expandedChild === child.id ? null : child.id)}
-              className="text-sm text-primary mt-2 flex items-center gap-1"
-            >
-              Sharing {expandedChild === child.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-
-            {expandedChild === child.id && (
-              <SharesSection childId={child.id} ownerId={child.ownerId} currentUserId={user?.id} onInvite={() => { setShowInvite(child.id); setInviteEmail(""); setInviteRole("CAREGIVER"); }} onRevoke={(shareId) => revokeShare.mutate({ childId: child.id, shareId })} />
-            )}
+            <SharesSection childId={child.id} ownerId={child.ownerId} currentUserId={user?.id} onInvite={() => { setShowInvite(child.id); setInviteEmail(""); setInviteRole("CAREGIVER"); }} onRevoke={(shareId) => revokeShare.mutate({ childId: child.id, shareId })} />
 
             <div className="mt-2">
               <button onClick={() => { setExportingChild(child.id); setExportRange("last30"); }} className="text-sm text-secondary flex items-center gap-1">
@@ -459,30 +449,41 @@ function SharesSection({ childId, ownerId, currentUserId, onInvite, onRevoke }: 
   const isOwner = ownerId === currentUserId;
 
   return (
-    <div className="mt-2 space-y-2">
-      {shares.map((share: any) => (
-        <div key={share.id} className="flex items-center justify-between text-sm bg-elevated rounded-xl px-3 py-2">
-          <div>
-            <p className="text-text-primary">{share.user?.name || share.email}</p>
-            <p className="flex items-center gap-2">
-              <span className={share.role === "CAREGIVER" ? "text-primary" : "text-secondary"}>
-                {share.role === "CAREGIVER" ? "Caregiver" : "Viewer"}
-              </span>
-              <span className={share.accepted ? "text-success" : "text-warning"}>
-                {share.accepted ? "Active" : "Pending"}
-              </span>
-            </p>
-          </div>
-          {isOwner && (
-            <button onClick={() => onRevoke(share.id)} className="text-xs text-danger hover:underline">Revoke</button>
+    <div className="mt-3 pt-3 border-t border-border">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-medium text-text-secondary">Sharing</p>
+        {isOwner && (
+          <button onClick={onInvite} className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
+            <UserPlus size={14} /> Invite
+          </button>
+        )}
+      </div>
+      {shares.length === 0 && !isOwner ? (
+        <p className="text-xs text-text-muted">No one else has access</p>
+      ) : (
+        <div className="space-y-2">
+          {shares.map((share: any) => (
+            <div key={share.id} className="flex items-center justify-between text-sm bg-elevated rounded-xl px-3 py-2">
+              <div>
+                <p className="text-text-primary">{share.user?.name || share.email}</p>
+                <p className="flex items-center gap-2">
+                  <span className={share.role === "CAREGIVER" ? "text-primary" : "text-secondary"}>
+                    {share.role === "CAREGIVER" ? "Caregiver" : "Viewer"}
+                  </span>
+                  <span className={share.accepted ? "text-success" : "text-warning"}>
+                    {share.accepted ? "Active" : "Pending"}
+                  </span>
+                </p>
+              </div>
+              {isOwner && (
+                <button onClick={() => onRevoke(share.id)} className="text-xs text-danger hover:underline">Revoke</button>
+              )}
+            </div>
+          ))}
+          {shares.length === 0 && isOwner && (
+            <p className="text-xs text-text-muted">No one else has access yet</p>
           )}
         </div>
-      ))}
-      {/* Also show child owner as a share entry */}
-      {isOwner && (
-        <button onClick={onInvite} className="text-sm text-primary flex items-center gap-1">
-          <UserPlus size={14} /> Invite Someone
-        </button>
       )}
     </div>
   );
