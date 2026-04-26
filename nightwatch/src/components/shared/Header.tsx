@@ -9,7 +9,7 @@ export function Header() {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Moon className="text-primary" size={20} />
-          <h1 className="font-display text-xl font-bold text-primary">NightWatch</h1>
+          <h1 className="font-display text-xl font-bold text-primary">CribNotes</h1>
         </div>
         <Link href="/settings" className="p-2 text-text-secondary hover:text-primary transition-colors">
           <Settings size={20} />

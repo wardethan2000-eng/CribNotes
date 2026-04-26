@@ -63,7 +63,7 @@ export function PwaBanner() {
       <div className="flex items-center gap-3 min-w-0">
         {isIos ? <Share size={18} className="text-primary shrink-0" /> : <Download size={18} className="text-primary shrink-0" />}
         <p className="text-sm">
-          {isIos ? "Use Share, then Add to Home Screen." : "Install NightWatch on this device."}
+          {isIos ? "Use Share, then Add to Home Screen." : "Install CribNotes on this device."}
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">

@@ -3,13 +3,13 @@ import { Providers } from "@/lib/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NightWatch — Baby Tracker",
-  description: "Track your baby's night activity",
+  title: "CribNotes — Baby Tracker",
+  description: "Track your baby's activity, effortlessly",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "NightWatch",
+    title: "CribNotes",
   },
 };
 
@@ -33,7 +33,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="NightWatch" />
+        <meta name="apple-mobile-web-app-title" content="CribNotes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="format-detection" content="telephone=no" />
       </head>

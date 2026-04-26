@@ -2,9 +2,9 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = process.env.RESEND_FROM_EMAIL || "noreply@nightwatch.app";
+const FROM = process.env.RESEND_FROM_EMAIL || "noreply@cribnotes.baby";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-const APP_NAME = "NightWatch";
+const APP_NAME = "CribNotes";
 
 function baseHtml(content: string) {
   return `<!DOCTYPE html>
@@ -24,7 +24,7 @@ function baseHtml(content: string) {
     </tr>
     <tr>
       <td style="text-align:center;padding:16px;color:#94a3b8;font-size:12px;">
-        ${APP_NAME} — Track your baby's night activity
+        ${APP_NAME} — Track your baby's activity
       </td>
     </tr>
   </table>

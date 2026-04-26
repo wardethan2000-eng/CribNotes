@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "NightWatch",
-  "short_name": "NightWatch",
-  "description": "Track your baby's night activity",
+  "name": "CribNotes",
+  "short_name": "CribNotes",
+  "description": "Track your baby's activity, effortlessly",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

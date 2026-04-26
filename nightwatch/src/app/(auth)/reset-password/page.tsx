@@ -71,7 +71,7 @@ function ResetPasswordForm() {
     <div className="flex flex-col items-center justify-center min-h-screen px-6">
       <div className="flex items-center gap-2 mb-8">
         <Moon className="text-primary" size={32} />
-        <h1 className="font-display text-3xl font-bold text-primary">NightWatch</h1>
+        <h1 className="font-display text-3xl font-bold text-primary">CribNotes</h1>
       </div>
       <p className="text-text-secondary mb-8">Enter your new password</p>
 

@@ -101,7 +101,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Moon className="text-primary" size={32} />
               </div>
-              <h1 className="font-display text-2xl font-bold text-text-primary mb-2">Welcome to NightWatch</h1>
+              <h1 className="font-display text-2xl font-bold text-text-primary mb-2">Welcome to CribNotes</h1>
               <p className="text-text-secondary mb-6">Track your baby&apos;s night activity, effortlessly</p>
               <Button full onClick={() => setStep(2)}>Let&apos;s get started</Button>
             </div>

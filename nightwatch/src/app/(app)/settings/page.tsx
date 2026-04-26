@@ -146,7 +146,7 @@ export default function SettingsPage() {
       const wb = XLSX.utils.book_new();
 
       const summaryData = [
-        ["NightWatch — " + childName + " Export"],
+        ["CribNotes — " + childName + " Export"],
         ["Generated: " + now.toLocaleDateString()],
         [""],
         ["Metric", "Value"],
@@ -217,7 +217,7 @@ export default function SettingsPage() {
       const ws6 = XLSX.utils.aoa_to_sheet([pumpHeaders, ...pumpRows]);
       XLSX.utils.book_append_sheet(wb, ws6, "Pump Log");
 
-      XLSX.writeFile(wb, `nightwatch-${childName}-${exportRange}.xlsx`);
+      XLSX.writeFile(wb, `cribnotes-${childName}-${exportRange}.xlsx`);
       toast.success("Export downloaded!");
     } catch {
       toast.error("Export failed");
@@ -238,14 +238,14 @@ export default function SettingsPage() {
           <div className="bg-surface rounded-2xl p-4">
             {canInstall ? (
               <>
-                <p className="text-sm text-text-secondary mb-3">Install NightWatch on your device for quick access and offline support.</p>
+                <p className="text-sm text-text-secondary mb-3">Install CribNotes on your device for quick access and offline support.</p>
                 <Button full onClick={install}>
                   <Smartphone size={16} className="mr-2" /> Install App
                 </Button>
               </>
             ) : isIos ? (
               <div className="text-sm text-text-secondary space-y-2">
-                <p>To install NightWatch on your iPhone:</p>
+                <p>To install CribNotes on your iPhone:</p>
                 <ol className="list-decimal list-inside space-y-1">
                   <li>Open this page in <strong>Safari</strong></li>
                   <li>Tap the <strong>Share</strong> button at the bottom</li>
@@ -254,7 +254,7 @@ export default function SettingsPage() {
               </div>
             ) : isAndroid ? (
               <div className="text-sm text-text-secondary space-y-2">
-                <p>To install NightWatch on your Android phone:</p>
+                <p>To install CribNotes on your Android phone:</p>
                 <ol className="list-decimal list-inside space-y-1">
                   <li>Tap the <strong>three-dot menu</strong> in Chrome</li>
                   <li>Tap <strong>Add to Home Screen</strong></li>
@@ -262,7 +262,7 @@ export default function SettingsPage() {
               </div>
             ) : (
               <div className="text-sm text-text-secondary space-y-2">
-                <p>To install NightWatch:</p>
+                <p>To install CribNotes:</p>
                 <ol className="list-decimal list-inside space-y-1">
                   <li>Use your browser&apos;s menu to <strong>Add to Home Screen</strong></li>
                 </ol>

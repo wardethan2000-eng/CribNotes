@@ -21,7 +21,7 @@ export const useAppStore = create<AppState>()(
       dismissPwaBanner: () => set({ pwaBannerDismissed: true }),
     }),
     {
-      name: "nightwatch-app-store",
+      name: "cribnotes-app-store",
       partialize: (state) => ({
         selectedChildId: state.selectedChildId,
         onboarded: state.onboarded,
