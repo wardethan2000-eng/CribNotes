@@ -14,6 +14,8 @@ const typeConfig: Record<string, { icon: string; color: string; label: string }>
   WAKE: { icon: "🌙", color: "text-[#fbbf24]", label: "Woke Up" },
   FEED: { icon: "🍼", color: "text-[#38bdf8]", label: "Fed" },
   DIAPER: { icon: "💧", color: "text-[#818cf8]", label: "Diaper" },
+  NURSE: { icon: "🤱", color: "text-[#f472b6]", label: "Nursed" },
+  PUMP: { icon: "🥛", color: "text-[#a78bfa]", label: "Pumped" },
 };
 
 export function LogRow({ log, onEdit, onDelete }: LogRowProps) {
@@ -26,6 +28,13 @@ export function LogRow({ log, onEdit, onDelete }: LogRowProps) {
     }
     if (log.type === "DIAPER" && log.diaperType) {
       return log.diaperType === "PEE" ? "Pee" : log.diaperType === "POOP" ? "Poop" : "Pee + poop";
+    }
+    if (log.type === "NURSE" && log.nurseDuration) {
+      const side = log.nurseSide ? ` · ${log.nurseSide === "BOTH" ? "Both sides" : log.nurseSide === "LEFT" ? "Left side" : "Right side"}` : "";
+      return `${log.nurseDuration} min${side}`;
+    }
+    if (log.type === "PUMP" && log.pumpAmount) {
+      return `${log.pumpAmount} ${log.pumpUnit?.toLowerCase() || "oz"}`;
     }
     return "";
   };

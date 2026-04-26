@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Moon, Baby, Droplets } from "lucide-react";
+import { Moon, Baby, Droplets, Heart, Milk } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { formatRelativeTime } from "@/lib/utils";
@@ -10,6 +10,8 @@ const typeConfig: Record<string, { icon: typeof Moon; label: string; color: stri
   WAKE: { icon: Moon, label: "Woke Up", color: "text-[#fbbf24] bg-[#fbbf24]/10", detailKey: "" },
   FEED: { icon: Baby, label: "Fed", color: "text-[#38bdf8] bg-[#38bdf8]/10", detailKey: "feedAmount" },
   DIAPER: { icon: Droplets, label: "Diaper", color: "text-[#818cf8] bg-[#818cf8]/10", detailKey: "" },
+  NURSE: { icon: Heart, label: "Nursed", color: "text-[#f472b6] bg-[#f472b6]/10", detailKey: "" },
+  PUMP: { icon: Milk, label: "Pumped", color: "text-[#a78bfa] bg-[#a78bfa]/10", detailKey: "" },
 };
 
 export default function RecentActivity() {
@@ -56,6 +58,13 @@ export default function RecentActivity() {
     }
     if (log.type === "DIAPER" && log.diaperType) {
       return log.diaperType === "PEE" ? "Pee" : log.diaperType === "POOP" ? "Poop" : "Pee + poop";
+    }
+    if (log.type === "NURSE" && log.nurseDuration) {
+      const side = log.nurseSide ? ` · ${log.nurseSide === "BOTH" ? "Both sides" : log.nurseSide === "LEFT" ? "Left side" : "Right side"}` : "";
+      return `${log.nurseDuration} min${side}`;
+    }
+    if (log.type === "PUMP" && log.pumpAmount) {
+      return `${log.pumpAmount} ${log.pumpUnit?.toLowerCase() || "oz"}`;
     }
     return "";
   };

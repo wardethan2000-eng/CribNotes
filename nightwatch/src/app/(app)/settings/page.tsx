@@ -193,6 +193,30 @@ export default function SettingsPage() {
       const ws4 = XLSX.utils.aoa_to_sheet([wakeHeaders, ...wakeRows]);
       XLSX.utils.book_append_sheet(wb, ws4, "Wake Events");
 
+      const nurseHeaders = ["Date", "Time", "Duration (min)", "Side", "Notes", "Logged By"];
+      const nurseRows = data.nurses.map((l: any) => [
+        new Date(l.occurredAt).toLocaleDateString(),
+        new Date(l.occurredAt).toLocaleTimeString(),
+        l.nurseDuration || "",
+        l.nurseSide || "",
+        l.notes || "",
+        l.userName || "",
+      ]);
+      const ws5 = XLSX.utils.aoa_to_sheet([nurseHeaders, ...nurseRows]);
+      XLSX.utils.book_append_sheet(wb, ws5, "Nursing Log");
+
+      const pumpHeaders = ["Date", "Time", "Amount", "Unit", "Notes", "Logged By"];
+      const pumpRows = data.pumps.map((l: any) => [
+        new Date(l.occurredAt).toLocaleDateString(),
+        new Date(l.occurredAt).toLocaleTimeString(),
+        l.pumpAmount || "",
+        l.pumpUnit || "",
+        l.notes || "",
+        l.userName || "",
+      ]);
+      const ws6 = XLSX.utils.aoa_to_sheet([pumpHeaders, ...pumpRows]);
+      XLSX.utils.book_append_sheet(wb, ws6, "Pump Log");
+
       XLSX.writeFile(wb, `nightwatch-${childName}-${exportRange}.xlsx`);
       toast.success("Export downloaded!");
     } catch {

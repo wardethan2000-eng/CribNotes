@@ -32,13 +32,17 @@ export const updateChildSchema = z.object({
 
 export const createLogSchema = z.object({
   childId: z.string().uuid(),
-  type: z.enum(["WAKE", "FEED", "DIAPER"]),
+  type: z.enum(["WAKE", "FEED", "DIAPER", "NURSE", "PUMP"]),
   occurredAt: z.string().optional(),
   notes: z.string().max(500).optional(),
   feedAmount: z.number().min(0).optional(),
   feedUnit: z.enum(["OZ", "ML"]).optional(),
   feedType: z.enum(["BREAST", "BOTTLE", "BOTH"]).optional(),
   diaperType: z.enum(["PEE", "POOP", "BOTH"]).optional(),
+  nurseDuration: z.number().min(0).optional(),
+  nurseSide: z.enum(["LEFT", "RIGHT", "BOTH"]).optional(),
+  pumpAmount: z.number().min(0).optional(),
+  pumpUnit: z.enum(["OZ", "ML"]).optional(),
 });
 
 export const updateLogSchema = z.object({
@@ -48,6 +52,10 @@ export const updateLogSchema = z.object({
   feedUnit: z.enum(["OZ", "ML"]).optional(),
   feedType: z.enum(["BREAST", "BOTTLE", "BOTH"]).optional(),
   diaperType: z.enum(["PEE", "POOP", "BOTH"]).optional(),
+  nurseDuration: z.number().min(0).optional(),
+  nurseSide: z.enum(["LEFT", "RIGHT", "BOTH"]).optional(),
+  pumpAmount: z.number().min(0).optional(),
+  pumpUnit: z.enum(["OZ", "ML"]).optional(),
 });
 
 export const inviteSchema = z.object({

@@ -95,6 +95,10 @@ export async function POST(request: Request) {
         feedAmount: data.feedAmount,
         feedUnit: data.feedUnit,
         feedType: data.feedType,
+        nurseDuration: data.nurseDuration,
+        nurseSide: data.nurseSide,
+        pumpAmount: data.pumpAmount,
+        pumpUnit: data.pumpUnit,
       },
     });
 

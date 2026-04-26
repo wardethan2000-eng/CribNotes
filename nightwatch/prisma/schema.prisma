@@ -16,6 +16,8 @@ enum LogType {
   WAKE
   FEED
   DIAPER
+  NURSE
+  PUMP
 }
 
 enum FeedUnit {
@@ -32,6 +34,12 @@ enum FeedType {
 enum DiaperType {
   PEE
   POOP
+  BOTH
+}
+
+enum NurseSide {
+  LEFT
+  RIGHT
   BOTH
 }
 
@@ -93,6 +101,10 @@ model Log {
   feedUnit   FeedUnit?
   feedType   FeedType?
   diaperType DiaperType?
+  nurseDuration Int?
+  nurseSide   NurseSide?
+  pumpAmount Float?
+  pumpUnit   FeedUnit?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

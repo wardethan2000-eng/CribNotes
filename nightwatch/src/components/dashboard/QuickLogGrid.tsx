@@ -1,12 +1,14 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Moon, Baby, Droplets } from "lucide-react";
+import { Moon, Baby, Droplets, Heart, Milk } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import QuickLogButton from "@/components/dashboard/QuickLogButton";
 import FeedDetailsSheet from "@/components/dashboard/FeedDetailsSheet";
 import DiaperDetailsSheet from "@/components/dashboard/DiaperDetailsSheet";
+import NurseDetailsSheet from "@/components/dashboard/NurseDetailsSheet";
+import PumpDetailsSheet from "@/components/dashboard/PumpDetailsSheet";
 import { useAppStore } from "@/lib/store";
 import { format } from "date-fns";
 
@@ -17,6 +19,10 @@ export default function QuickLogGrid() {
   const [feedLogId, setFeedLogId] = useState<string | null>(null);
   const [diaperSheetOpen, setDiaperSheetOpen] = useState(false);
   const [diaperLogId, setDiaperLogId] = useState<string | null>(null);
+  const [nurseSheetOpen, setNurseSheetOpen] = useState(false);
+  const [nurseLogId, setNurseLogId] = useState<string | null>(null);
+  const [pumpSheetOpen, setPumpSheetOpen] = useState(false);
+  const [pumpLogId, setPumpLogId] = useState<string | null>(null);
 
   const logMutation = useMutation({
     mutationFn: (data: { type: string; childId: string; occurredAt: string }) =>
@@ -30,7 +36,7 @@ export default function QuickLogGrid() {
       }),
   });
 
-  const handleLog = (type: "WAKE" | "FEED" | "DIAPER") => {
+  const handleLog = (type: "WAKE" | "FEED" | "DIAPER" | "NURSE" | "PUMP") => {
     if (!selectedChildId) {
       toast.error("Please select a child first");
       return;
@@ -49,6 +55,12 @@ export default function QuickLogGrid() {
           } else if (type === "DIAPER") {
             setDiaperLogId(data.id);
             setDiaperSheetOpen(true);
+          } else if (type === "NURSE") {
+            setNurseLogId(data.id);
+            setNurseSheetOpen(true);
+          } else if (type === "PUMP") {
+            setPumpLogId(data.id);
+            setPumpSheetOpen(true);
           } else {
             const messages: Record<string, string> = {
               WAKE: `Logged: woke up at ${time}`,
@@ -78,13 +90,25 @@ export default function QuickLogGrid() {
           color="primary"
           onClick={() => handleLog("FEED")}
         />
-      </div>
-      <div className="w-full max-w-[160px]">
+        <QuickLogButton
+          icon={Heart}
+          label="Nursed"
+          color="warning"
+          onClick={() => handleLog("NURSE")}
+        />
         <QuickLogButton
           icon={Droplets}
           label="Diaper"
           color="secondary"
           onClick={() => handleLog("DIAPER")}
+        />
+      </div>
+      <div className="w-full max-w-[160px]">
+        <QuickLogButton
+          icon={Milk}
+          label="Pumped"
+          color="secondary"
+          onClick={() => handleLog("PUMP")}
         />
       </div>
       <FeedDetailsSheet
@@ -96,6 +120,16 @@ export default function QuickLogGrid() {
         open={diaperSheetOpen}
         onClose={() => setDiaperSheetOpen(false)}
         logId={diaperLogId}
+      />
+      <NurseDetailsSheet
+        open={nurseSheetOpen}
+        onClose={() => setNurseSheetOpen(false)}
+        logId={nurseLogId}
+      />
+      <PumpDetailsSheet
+        open={pumpSheetOpen}
+        onClose={() => setPumpSheetOpen(false)}
+        logId={pumpLogId}
       />
     </div>
   );

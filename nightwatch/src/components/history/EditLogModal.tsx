@@ -21,6 +21,10 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
   const [feedUnit, setFeedUnit] = useState<"OZ" | "ML">("OZ");
   const [feedType, setFeedType] = useState<"BREAST" | "BOTTLE" | "BOTH">("BOTTLE");
   const [diaperType, setDiaperType] = useState<"PEE" | "POOP" | "BOTH">("PEE");
+  const [nurseDuration, setNurseDuration] = useState<string>("");
+  const [nurseSide, setNurseSide] = useState<"LEFT" | "RIGHT" | "BOTH">("BOTH");
+  const [pumpAmount, setPumpAmount] = useState<string>("");
+  const [pumpUnit, setPumpUnit] = useState<"OZ" | "ML">("OZ");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -31,6 +35,10 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
       setFeedUnit(log.feedUnit || "OZ");
       setFeedType(log.feedType || "BOTTLE");
       setDiaperType(log.diaperType || "PEE");
+      setNurseDuration(log.nurseDuration != null ? String(log.nurseDuration) : "");
+      setNurseSide(log.nurseSide || "BOTH");
+      setPumpAmount(log.pumpAmount != null ? String(log.pumpAmount) : "");
+      setPumpUnit(log.pumpUnit || "OZ");
       setNotes(log.notes || "");
     }
   }, [log, open]);
@@ -50,6 +58,14 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
       }
       if (log.type === "DIAPER") {
         data.diaperType = diaperType;
+      }
+      if (log.type === "NURSE") {
+        data.nurseDuration = nurseDuration ? parseInt(nurseDuration) : undefined;
+        data.nurseSide = nurseSide;
+      }
+      if (log.type === "PUMP") {
+        data.pumpAmount = pumpAmount ? parseFloat(pumpAmount) : undefined;
+        data.pumpUnit = pumpUnit;
       }
       const res = await fetch(`/api/logs/${log.id}`, {
         method: "PATCH",
@@ -107,6 +123,35 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
                   {t === "PEE" ? "Pee" : t === "POOP" ? "Poop" : "Both"}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {log?.type === "NURSE" && (
+          <>
+            <Input label="Duration (minutes)" type="number" step="1" value={nurseDuration} onChange={(e) => setNurseDuration(e.target.value)} placeholder="15" />
+            <div>
+              <p className="text-sm text-text-secondary mb-2">Side</p>
+              <div className="grid grid-cols-3 gap-2">
+                {(["LEFT", "RIGHT", "BOTH"] as const).map((s) => (
+                  <button key={s} type="button" onClick={() => setNurseSide(s)} className={`px-3 py-2 rounded-2xl text-sm ${nurseSide === s ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>
+                    {s === "LEFT" ? "Left" : s === "RIGHT" ? "Right" : "Both"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {log?.type === "PUMP" && (
+          <div className="space-y-4">
+            <Input label="Amount" type="number" step="0.5" value={pumpAmount} onChange={(e) => setPumpAmount(e.target.value)} placeholder="3.5" />
+            <div>
+              <p className="text-sm text-text-secondary mb-2">Unit</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setPumpUnit("OZ")} className={`px-4 py-2 rounded-full text-sm ${pumpUnit === "OZ" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>OZ</button>
+                <button type="button" onClick={() => setPumpUnit("ML")} className={`px-4 py-2 rounded-full text-sm ${pumpUnit === "ML" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>ML</button>
+              </div>
             </div>
           </div>
         )}

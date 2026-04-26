@@ -53,11 +53,21 @@ export default function AnalyticsPage() {
   const feeds = logs.filter((l: any) => l.type === "FEED");
   const diapers = logs.filter((l: any) => l.type === "DIAPER");
   const wakes = logs.filter((l: any) => l.type === "WAKE");
+  const nurses = logs.filter((l: any) => l.type === "NURSE");
+  const pumps = logs.filter((l: any) => l.type === "PUMP");
 
   const totalFeeds = feeds.length;
   const totalVolume = feeds.reduce((s: number, l: any) => s + (l.feedAmount || 0), 0);
   const days = timeRange === "day" ? 1 : timeRange === "week" ? 7 : 30;
   const avgPerDay = (totalFeeds / days).toFixed(1);
+
+  const totalNurses = nurses.length;
+  const totalNurseMinutes = nurses.reduce((s: number, l: any) => s + (l.nurseDuration || 0), 0);
+  const avgNurseDuration = totalNurses > 0 ? (totalNurseMinutes / totalNurses).toFixed(0) : "0";
+
+  const totalPumps = pumps.length;
+  const totalPumpVolume = pumps.reduce((s: number, l: any) => s + (l.pumpAmount || 0), 0);
+  const avgPumpPerDay = (totalPumpVolume / days).toFixed(1);
 
   const feedAmountData = feeds.reduce((acc: any[], l: any) => {
     const date = format(new Date(l.occurredAt), "MMM dd");
@@ -89,6 +99,20 @@ export default function AnalyticsPage() {
     return { date: key, count: diapers.filter((l: any) => format(new Date(l.occurredAt), "MMM dd") === key).length };
   });
 
+  const nurseDurationPerDay = [...Array(Math.min(days, 7))].map((_, i) => {
+    const date = new Date(from);
+    date.setDate(date.getDate() + i);
+    const key = format(date, "MMM dd");
+    return { date: key, minutes: nurses.filter((l: any) => format(new Date(l.occurredAt), "MMM dd") === key).reduce((s: number, l: any) => s + (l.nurseDuration || 0), 0) };
+  });
+
+  const pumpVolumePerDay = [...Array(Math.min(days, 7))].map((_, i) => {
+    const date = new Date(from);
+    date.setDate(date.getDate() + i);
+    const key = format(date, "MMM dd");
+    return { date: key, amount: pumps.filter((l: any) => format(new Date(l.occurredAt), "MMM dd") === key).reduce((s: number, l: any) => s + (l.pumpAmount || 0), 0) };
+  });
+
   return (
     <div className="px-4 pt-4 pb-24">
       <h1 className="font-display text-2xl font-bold text-text-primary mb-4">Analytics</h1>
@@ -112,6 +136,10 @@ export default function AnalyticsPage() {
         <MetricCard label="Total Volume" value={`${totalVolume.toFixed(1)} oz`} />
         <MetricCard label="Diaper Changes" value={String(diapers.length)} />
         <MetricCard label="Wake Events" value={String(wakes.length)} />
+        <MetricCard label="Nursing Sessions" value={String(totalNurses)} sublabel={`Avg ${avgNurseDuration} min`} />
+        <MetricCard label="Nursing Total" value={`${totalNurseMinutes} min`} />
+        <MetricCard label="Pump Sessions" value={String(totalPumps)} />
+        <MetricCard label="Pump Volume" value={`${totalPumpVolume.toFixed(1)} oz`} sublabel={`${avgPumpPerDay} oz/day`} />
       </div>
 
       <div className="space-y-6">
@@ -172,6 +200,38 @@ export default function AnalyticsPage() {
                 <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
                 <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
                 <Bar dataKey="count" fill="#818cf8" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center py-8 text-text-muted">No data yet for this period.</p>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Nursing Duration Per Day">
+          {nurseDurationPerDay.some((d) => d.minutes > 0) ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={nurseDurationPerDay}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
+                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
+                <Bar dataKey="minutes" fill="#f472b6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center py-8 text-text-muted">No data yet for this period.</p>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Pump Volume Per Day">
+          {pumpVolumePerDay.some((d) => d.amount > 0) ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={pumpVolumePerDay}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
+                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
+                <Bar dataKey="amount" fill="#a78bfa" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

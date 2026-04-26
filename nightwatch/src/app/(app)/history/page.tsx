@@ -14,7 +14,7 @@ export default function HistoryPage() {
   const selectedChildId = useAppStore((s) => s.selectedChildId);
   const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<"today" | "week" | "month">("week");
-  const [activeTypes, setActiveTypes] = useState<string[]>(["WAKE", "FEED", "DIAPER"]);
+  const [activeTypes, setActiveTypes] = useState<string[]>(["WAKE", "FEED", "DIAPER", "NURSE", "PUMP"]);
   const [editingLog, setEditingLog] = useState<any>(null);
 
   const getDateRange = () => {
@@ -84,6 +84,8 @@ export default function HistoryPage() {
     WAKE: "bg-[#fbbf24]/10 text-[#fbbf24]",
     FEED: "bg-[#38bdf8]/10 text-[#38bdf8]",
     DIAPER: "bg-[#818cf8]/10 text-[#818cf8]",
+    NURSE: "bg-[#f472b6]/10 text-[#f472b6]",
+    PUMP: "bg-[#a78bfa]/10 text-[#a78bfa]",
   };
 
   return (
@@ -107,7 +109,7 @@ export default function HistoryPage() {
       </div>
 
       <div className="flex gap-2 mb-6">
-        {(["WAKE", "FEED", "DIAPER"] as const).map((type) => (
+        {(["WAKE", "FEED", "DIAPER", "NURSE", "PUMP"] as const).map((type) => (
           <button
             key={type}
             onClick={() => toggleType(type)}
@@ -115,7 +117,7 @@ export default function HistoryPage() {
               activeTypes.includes(type) ? typeColors[type] : "bg-surface text-text-muted"
             }`}
           >
-            {type === "WAKE" ? "Wake" : type === "FEED" ? "Feed" : "Diaper"}
+            {type === "WAKE" ? "Wake" : type === "FEED" ? "Feed" : type === "DIAPER" ? "Diaper" : type === "NURSE" ? "Nurse" : "Pump"}
           </button>
         ))}
       </div>
