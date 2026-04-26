@@ -39,6 +39,7 @@ export async function GET(request: Request, { params }: { params: { childId: str
     const wakes = logs.filter((l) => l.type === "WAKE");
     const nurses = logs.filter((l) => l.type === "NURSE");
     const pumps = logs.filter((l) => l.type === "PUMP");
+    const sleeps = logs.filter((l) => l.type === "SLEEP");
     const diaperTypes = diapers.length
       ? await prisma.$queryRaw<{ id: string; diaperType: string | null }[]>(
           Prisma.sql`SELECT id, "diaperType" FROM "Log" WHERE id IN (${Prisma.join(diapers.map((item) => item.id))})`
@@ -63,6 +64,7 @@ export async function GET(request: Request, { params }: { params: { childId: str
         totalNurseMinutes: nurses.reduce((s, n) => s + (n.nurseDuration || 0), 0),
         totalPumps: pumps.length,
         totalPumpVolume: pumps.reduce((s, p) => s + (p.pumpAmount || 0), 0),
+        totalSleeps: sleeps.length,
       },
       feeds: feeds.map((l) => ({
         id: l.id,
@@ -99,6 +101,12 @@ export async function GET(request: Request, { params }: { params: { childId: str
         occurredAt: l.occurredAt,
         pumpAmount: l.pumpAmount,
         pumpUnit: l.pumpUnit,
+        notes: l.notes,
+        userName: l.user?.name,
+      })),
+      sleeps: sleeps.map((l) => ({
+        id: l.id,
+        occurredAt: l.occurredAt,
         notes: l.notes,
         userName: l.user?.name,
       })),

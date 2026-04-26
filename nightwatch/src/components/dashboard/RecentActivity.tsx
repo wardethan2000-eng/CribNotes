@@ -1,13 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Moon, Baby, Droplets, Heart, Milk } from "lucide-react";
+import { Moon, Sun, Baby, Droplets, Heart, Milk } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { formatRelativeTime } from "@/lib/utils";
 
 const typeConfig: Record<string, { icon: typeof Moon; label: string; color: string; detailKey: string }> = {
-  WAKE: { icon: Moon, label: "Woke Up", color: "text-[#fbbf24] bg-[#fbbf24]/10", detailKey: "" },
+  WAKE: { icon: Sun, label: "Woke Up", color: "text-[#fbbf24] bg-[#fbbf24]/10", detailKey: "" },
+  SLEEP: { icon: Moon, label: "Fell Asleep", color: "text-[#818cf8] bg-[#818cf8]/10", detailKey: "" },
   FEED: { icon: Baby, label: "Fed", color: "text-[#38bdf8] bg-[#38bdf8]/10", detailKey: "feedAmount" },
   DIAPER: { icon: Droplets, label: "Diaper", color: "text-[#818cf8] bg-[#818cf8]/10", detailKey: "" },
   NURSE: { icon: Heart, label: "Nursed", color: "text-[#f472b6] bg-[#f472b6]/10", detailKey: "" },

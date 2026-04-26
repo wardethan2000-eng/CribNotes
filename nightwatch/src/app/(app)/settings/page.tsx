@@ -217,6 +217,16 @@ export default function SettingsPage() {
       const ws6 = XLSX.utils.aoa_to_sheet([pumpHeaders, ...pumpRows]);
       XLSX.utils.book_append_sheet(wb, ws6, "Pump Log");
 
+      const sleepHeaders = ["Date", "Time", "Notes", "Logged By"];
+      const sleepRows = (data.sleeps || []).map((l: any) => [
+        new Date(l.occurredAt).toLocaleDateString(),
+        new Date(l.occurredAt).toLocaleTimeString(),
+        l.notes || "",
+        l.userName || "",
+      ]);
+      const ws7 = XLSX.utils.aoa_to_sheet([sleepHeaders, ...sleepRows]);
+      XLSX.utils.book_append_sheet(wb, ws7, "Sleep Log");
+
       XLSX.writeFile(wb, `cribnotes-${childName}-${exportRange}.xlsx`);
       toast.success("Export downloaded!");
     } catch {

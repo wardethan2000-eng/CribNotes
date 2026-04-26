@@ -55,6 +55,7 @@ export default function AnalyticsPage() {
   const wakes = logs.filter((l: any) => l.type === "WAKE");
   const nurses = logs.filter((l: any) => l.type === "NURSE");
   const pumps = logs.filter((l: any) => l.type === "PUMP");
+  const sleeps = logs.filter((l: any) => l.type === "SLEEP");
 
   const totalFeeds = feeds.length;
   const totalVolume = feeds.reduce((s: number, l: any) => s + (l.feedAmount || 0), 0);
@@ -68,6 +69,15 @@ export default function AnalyticsPage() {
   const totalPumps = pumps.length;
   const totalPumpVolume = pumps.reduce((s: number, l: any) => s + (l.pumpAmount || 0), 0);
   const avgPumpPerDay = (totalPumpVolume / days).toFixed(1);
+
+  let totalSleepMinutes = 0;
+  const sleepStarts = sleeps.map((l: any) => new Date(l.occurredAt)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
+  for (const sleepStart of sleepStarts) {
+    const matchingWake = wakes.find((w: any) => new Date(w.occurredAt) > sleepStart);
+    if (matchingWake) {
+      totalSleepMinutes += Math.round((new Date(matchingWake.occurredAt).getTime() - sleepStart.getTime()) / 60000);
+    }
+  }
 
   const feedAmountData = feeds.reduce((acc: any[], l: any) => {
     const date = format(new Date(l.occurredAt), "MMM dd");
@@ -113,6 +123,22 @@ export default function AnalyticsPage() {
     return { date: key, amount: pumps.filter((l: any) => format(new Date(l.occurredAt), "MMM dd") === key).reduce((s: number, l: any) => s + (l.pumpAmount || 0), 0) };
   });
 
+  const sleepDurationPerDay = [...Array(Math.min(days, 7))].map((_, i) => {
+    const date = new Date(from);
+    date.setDate(date.getDate() + i);
+    const key = format(date, "MMM dd");
+    const daySleeps = sleeps.filter((l: any) => format(new Date(l.occurredAt), "MMM dd") === key);
+    let daySleepMin = 0;
+    for (const s of daySleeps) {
+      const sleepStart = new Date(s.occurredAt);
+      const matchingWake = wakes.find((w: any) => new Date(w.occurredAt) > sleepStart && format(new Date(w.occurredAt), "MMM dd") === key);
+      if (matchingWake) {
+        daySleepMin += Math.round((new Date(matchingWake.occurredAt).getTime() - sleepStart.getTime()) / 60000);
+      }
+    }
+    return { date: key, minutes: daySleepMin };
+  });
+
   return (
     <div className="px-4 pt-4 pb-24">
       <h1 className="font-display text-2xl font-bold text-text-primary mb-4">Analytics</h1>
@@ -136,6 +162,7 @@ export default function AnalyticsPage() {
         <MetricCard label="Total Volume" value={`${totalVolume.toFixed(1)} oz`} />
         <MetricCard label="Diaper Changes" value={String(diapers.length)} />
         <MetricCard label="Wake Events" value={String(wakes.length)} />
+        <MetricCard label="Sleep" value={`${totalSleepMinutes}m`} sublabel={`${sleeps.length} nap${sleeps.length !== 1 ? "s" : ""}`} />
         <MetricCard label="Nursing Sessions" value={String(totalNurses)} sublabel={`Avg ${avgNurseDuration} min`} />
         <MetricCard label="Nursing Total" value={`${totalNurseMinutes} min`} />
         <MetricCard label="Pump Sessions" value={String(totalPumps)} />
@@ -200,6 +227,22 @@ export default function AnalyticsPage() {
                 <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
                 <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
                 <Bar dataKey="count" fill="#818cf8" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center py-8 text-text-muted">No data yet for this period.</p>
+          )}
+        </ChartCard>
+
+        <ChartCard title="Sleep Duration Per Day">
+          {sleepDurationPerDay.some((d) => d.minutes > 0) ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={sleepDurationPerDay}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
+                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
+                <Bar dataKey="minutes" fill="#818cf8" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

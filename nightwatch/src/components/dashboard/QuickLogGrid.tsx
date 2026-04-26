@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Moon, Baby, Droplets, Heart, Milk } from "lucide-react";
+import { Moon, Sun, Baby, Droplets, Heart, Milk } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import QuickLogButton from "@/components/dashboard/QuickLogButton";
@@ -36,7 +36,7 @@ export default function QuickLogGrid() {
       }),
   });
 
-  const handleLog = (type: "WAKE" | "FEED" | "DIAPER" | "NURSE" | "PUMP") => {
+  const handleLog = (type: "WAKE" | "SLEEP" | "FEED" | "DIAPER" | "NURSE" | "PUMP") => {
     if (!selectedChildId) {
       toast.error("Please select a child first");
       return;
@@ -64,6 +64,7 @@ export default function QuickLogGrid() {
           } else {
             const messages: Record<string, string> = {
               WAKE: `Logged: woke up at ${time}`,
+              SLEEP: `Logged: fell asleep at ${time}`,
             };
             toast.success(messages[type]);
           }
@@ -79,10 +80,16 @@ export default function QuickLogGrid() {
     <div className="flex flex-col items-center gap-4">
       <div className="grid grid-cols-2 gap-4 w-full max-w-md">
         <QuickLogButton
-          icon={Moon}
+          icon={Sun}
           label="Woke Up"
           color="warning"
           onClick={() => handleLog("WAKE")}
+        />
+        <QuickLogButton
+          icon={Moon}
+          label="Asleep"
+          color="secondary"
+          onClick={() => handleLog("SLEEP")}
         />
         <QuickLogButton
           icon={Baby}
@@ -91,19 +98,17 @@ export default function QuickLogGrid() {
           onClick={() => handleLog("FEED")}
         />
         <QuickLogButton
-          icon={Heart}
-          label="Nursed"
-          color="warning"
-          onClick={() => handleLog("NURSE")}
-        />
-        <QuickLogButton
           icon={Droplets}
           label="Diaper"
           color="secondary"
           onClick={() => handleLog("DIAPER")}
         />
-      </div>
-      <div className="w-full max-w-[160px]">
+        <QuickLogButton
+          icon={Heart}
+          label="Nursed"
+          color="warning"
+          onClick={() => handleLog("NURSE")}
+        />
         <QuickLogButton
           icon={Milk}
           label="Pumped"

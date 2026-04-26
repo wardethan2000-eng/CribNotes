@@ -32,7 +32,7 @@ export const updateChildSchema = z.object({
 
 export const createLogSchema = z.object({
   childId: z.string().uuid(),
-  type: z.enum(["WAKE", "FEED", "DIAPER", "NURSE", "PUMP"]),
+  type: z.enum(["WAKE", "SLEEP", "FEED", "DIAPER", "NURSE", "PUMP"]),
   occurredAt: z.string().optional(),
   notes: z.string().max(500).optional(),
   feedAmount: z.number().min(0).optional(),
