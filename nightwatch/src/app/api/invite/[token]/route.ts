@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 export async function GET(request: Request, { params }: { params: { token: string } }) {
   try {
+    const hashedToken = crypto.createHash("sha256").update(params.token).digest("hex");
+
     const share = await prisma.childShare.findFirst({
       where: {
-        token: params.token,
+        token: hashedToken,
         expiresAt: { gt: new Date() },
       },
       include: {
@@ -22,7 +25,6 @@ export async function GET(request: Request, { params }: { params: { token: strin
     return NextResponse.json({
       childName: share.child.name,
       ownerName: owner?.name || "Someone",
-      email: share.email,
       role: share.role,
       expired: false,
     });

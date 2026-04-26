@@ -67,6 +67,7 @@ export const inviteSchema = z.object({
 export const updateUserSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
+  currentPassword: z.string().optional(),
   password: z.string().min(8).optional(),
 });
 

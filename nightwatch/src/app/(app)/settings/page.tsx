@@ -53,7 +53,7 @@ export default function SettingsPage() {
   const [exportRange, setExportRange] = useState("last30");
 
   const updateProfile = useMutation({
-    mutationFn: (data: { name?: string; password?: string }) => api("/api/user/me", "PATCH", data),
+    mutationFn: (data: { name?: string; currentPassword?: string; password?: string }) => api("/api/user/me", "PATCH", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success("Profile updated");
@@ -140,93 +140,91 @@ export default function SettingsPage() {
       if (to) params.set("to", to.toISOString());
 
       const data = await api(`/api/export/${childId}?${params.toString()}`);
-      const XLSX = await import("xlsx");
+      const ExcelJS = await import("exceljs");
 
-      const wb = XLSX.utils.book_new();
+      const wb = new ExcelJS.Workbook();
 
-      const summaryData = [
-        ["CribNotes — " + childName + " Export"],
-        ["Generated: " + now.toLocaleDateString()],
-        [""],
-        ["Metric", "Value"],
-        ["Total Feeds", data.summary.totalFeeds],
-        ["Total Volume", data.summary.totalVolume + " oz"],
-        ["Avg Feeds/Day", data.summary.avgFeedsPerDay?.toFixed(1) || "0"],
-        ["Diaper Changes", data.summary.totalDiapers],
-        ["Wake Events", data.summary.totalWakes],
-      ];
-      const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(wb, ws1, "Summary");
+      const summarySheet = wb.addWorksheet("Summary");
+      summarySheet.addRow(["CribNotes — " + childName + " Export"]);
+      summarySheet.addRow(["Generated: " + now.toLocaleDateString()]);
+      summarySheet.addRow([]);
+      summarySheet.addRow(["Metric", "Value"]);
+      summarySheet.addRow(["Total Feeds", data.summary.totalFeeds]);
+      summarySheet.addRow(["Total Volume", data.summary.totalVolume + " oz"]);
+      summarySheet.addRow(["Avg Feeds/Day", data.summary.avgFeedsPerDay?.toFixed(1) || "0"]);
+      summarySheet.addRow(["Diaper Changes", data.summary.totalDiapers]);
+      summarySheet.addRow(["Wake Events", data.summary.totalWakes]);
 
-      const feedHeaders = ["Date", "Time", "Amount", "Unit", "Feed Type", "Notes", "Logged By"];
-      const feedRows = data.feeds.map((l: any) => [
-        new Date(l.occurredAt).toLocaleDateString(),
-        new Date(l.occurredAt).toLocaleTimeString(),
-        l.feedAmount || "",
-        l.feedUnit || "",
-        l.feedType || "",
-        l.notes || "",
-        l.userName || "",
-      ]);
-      const ws2 = XLSX.utils.aoa_to_sheet([feedHeaders, ...feedRows]);
-      XLSX.utils.book_append_sheet(wb, ws2, "Feed Log");
+      const addSheet = (name: string, headers: string[], rows: any[][]) => {
+        const ws = wb.addWorksheet(name);
+        ws.addRow(headers);
+        rows.forEach((r) => ws.addRow(r));
+      };
 
-      const diaperHeaders = ["Date", "Time", "Type", "Notes", "Logged By"];
-      const diaperRows = data.diapers.map((l: any) => [
-        new Date(l.occurredAt).toLocaleDateString(),
-        new Date(l.occurredAt).toLocaleTimeString(),
-        l.diaperType === "PEE" ? "Pee" : l.diaperType === "POOP" ? "Poop" : l.diaperType === "BOTH" ? "Pee + poop" : "",
-        l.notes || "",
-        l.userName || "",
-      ]);
-      const ws3 = XLSX.utils.aoa_to_sheet([diaperHeaders, ...diaperRows]);
-      XLSX.utils.book_append_sheet(wb, ws3, "Diaper Log");
+      addSheet("Feed Log", ["Date", "Time", "Amount", "Unit", "Feed Type", "Notes", "Logged By"],
+        data.feeds.map((l: any) => [
+          new Date(l.occurredAt).toLocaleDateString(),
+          new Date(l.occurredAt).toLocaleTimeString(),
+          l.feedAmount || "",
+          l.feedUnit || "",
+          l.feedType || "",
+          l.notes || "",
+          l.userName || "",
+        ]));
 
-      const wakeHeaders = ["Date", "Time", "Notes", "Logged By"];
-      const wakeRows = data.wakes.map((l: any) => [
-        new Date(l.occurredAt).toLocaleDateString(),
-        new Date(l.occurredAt).toLocaleTimeString(),
-        l.notes || "",
-        l.userName || "",
-      ]);
-      const ws4 = XLSX.utils.aoa_to_sheet([wakeHeaders, ...wakeRows]);
-      XLSX.utils.book_append_sheet(wb, ws4, "Wake Events");
+      addSheet("Diaper Log", ["Date", "Time", "Type", "Notes", "Logged By"],
+        data.diapers.map((l: any) => [
+          new Date(l.occurredAt).toLocaleDateString(),
+          new Date(l.occurredAt).toLocaleTimeString(),
+          l.diaperType === "PEE" ? "Pee" : l.diaperType === "POOP" ? "Poop" : l.diaperType === "BOTH" ? "Pee + poop" : "",
+          l.notes || "",
+          l.userName || "",
+        ]));
 
-      const nurseHeaders = ["Date", "Time", "Duration (min)", "Side", "Notes", "Logged By"];
-      const nurseRows = data.nurses.map((l: any) => [
-        new Date(l.occurredAt).toLocaleDateString(),
-        new Date(l.occurredAt).toLocaleTimeString(),
-        l.nurseDuration || "",
-        l.nurseSide || "",
-        l.notes || "",
-        l.userName || "",
-      ]);
-      const ws5 = XLSX.utils.aoa_to_sheet([nurseHeaders, ...nurseRows]);
-      XLSX.utils.book_append_sheet(wb, ws5, "Nursing Log");
+      addSheet("Wake Events", ["Date", "Time", "Notes", "Logged By"],
+        data.wakes.map((l: any) => [
+          new Date(l.occurredAt).toLocaleDateString(),
+          new Date(l.occurredAt).toLocaleTimeString(),
+          l.notes || "",
+          l.userName || "",
+        ]));
 
-      const pumpHeaders = ["Date", "Time", "Amount", "Unit", "Notes", "Logged By"];
-      const pumpRows = data.pumps.map((l: any) => [
-        new Date(l.occurredAt).toLocaleDateString(),
-        new Date(l.occurredAt).toLocaleTimeString(),
-        l.pumpAmount || "",
-        l.pumpUnit || "",
-        l.notes || "",
-        l.userName || "",
-      ]);
-      const ws6 = XLSX.utils.aoa_to_sheet([pumpHeaders, ...pumpRows]);
-      XLSX.utils.book_append_sheet(wb, ws6, "Pump Log");
+      addSheet("Nursing Log", ["Date", "Time", "Duration (min)", "Side", "Notes", "Logged By"],
+        data.nurses.map((l: any) => [
+          new Date(l.occurredAt).toLocaleDateString(),
+          new Date(l.occurredAt).toLocaleTimeString(),
+          l.nurseDuration || "",
+          l.nurseSide || "",
+          l.notes || "",
+          l.userName || "",
+        ]));
 
-      const sleepHeaders = ["Date", "Time", "Notes", "Logged By"];
-      const sleepRows = (data.sleeps || []).map((l: any) => [
-        new Date(l.occurredAt).toLocaleDateString(),
-        new Date(l.occurredAt).toLocaleTimeString(),
-        l.notes || "",
-        l.userName || "",
-      ]);
-      const ws7 = XLSX.utils.aoa_to_sheet([sleepHeaders, ...sleepRows]);
-      XLSX.utils.book_append_sheet(wb, ws7, "Sleep Log");
+      addSheet("Pump Log", ["Date", "Time", "Amount", "Unit", "Notes", "Logged By"],
+        data.pumps.map((l: any) => [
+          new Date(l.occurredAt).toLocaleDateString(),
+          new Date(l.occurredAt).toLocaleTimeString(),
+          l.pumpAmount || "",
+          l.pumpUnit || "",
+          l.notes || "",
+          l.userName || "",
+        ]));
 
-      XLSX.writeFile(wb, `cribnotes-${childName}-${exportRange}.xlsx`);
+      addSheet("Sleep Log", ["Date", "Time", "Notes", "Logged By"],
+        (data.sleeps || []).map((l: any) => [
+          new Date(l.occurredAt).toLocaleDateString(),
+          new Date(l.occurredAt).toLocaleTimeString(),
+          l.notes || "",
+          l.userName || "",
+        ]));
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `cribnotes-${childName}-${exportRange}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
       toast.success("Export downloaded!");
     } catch {
       toast.error("Export failed");
@@ -306,7 +304,7 @@ export default function SettingsPage() {
           <div className="bg-surface rounded-2xl p-4 space-y-3">
             <Input label="Current Password" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
             <Input label="New Password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            <Button variant="secondary" onClick={() => updateProfile.mutate({ password: newPassword })}>
+            <Button variant="secondary" onClick={() => updateProfile.mutate({ currentPassword: oldPassword, password: newPassword })}>
               Update Password
             </Button>
           </div>

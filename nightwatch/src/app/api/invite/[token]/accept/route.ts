@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendInviteAcceptedEmail } from "@/lib/resend";
+import crypto from "crypto";
 
 export async function POST(request: Request, { params }: { params: { token: string } }) {
   const session = await auth();
@@ -9,9 +10,11 @@ export async function POST(request: Request, { params }: { params: { token: stri
   const userId = session.user.id;
 
   try {
+    const hashedToken = crypto.createHash("sha256").update(params.token).digest("hex");
+
     const share = await prisma.childShare.findFirst({
       where: {
-        token: params.token,
+        token: hashedToken,
         expiresAt: { gt: new Date() },
       },
       include: { child: true },
@@ -27,7 +30,7 @@ export async function POST(request: Request, { params }: { params: { token: stri
 
     const updated = await prisma.childShare.update({
       where: { id: share.id },
-      data: { userId, accepted: true },
+      data: { userId, accepted: true, token: crypto.randomBytes(32).toString("hex") },
     });
 
     const owner = await prisma.user.findUnique({ where: { id: share.child.ownerId } });

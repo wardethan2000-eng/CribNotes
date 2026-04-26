@@ -5,6 +5,10 @@ import { canAccessChild, isOwner } from "@/lib/access";
 import { sendInviteEmail } from "@/lib/resend";
 import crypto from "crypto";
 
+function hashToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -16,7 +20,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     const shares = await prisma.childShare.findMany({
       where: { childId: params.id },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: { user: { select: { id: true, name: true } } },
     });
 
     return NextResponse.json(shares);
@@ -52,7 +56,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         childId: params.id,
         email,
         role,
-        token,
+        token: hashToken(token),
         expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000),
       },
     });

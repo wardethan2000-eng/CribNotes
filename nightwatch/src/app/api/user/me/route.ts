@@ -44,6 +44,13 @@ export async function PATCH(request: Request) {
       updateData.email = data.email;
     }
     if (data.password) {
+      if (!data.currentPassword) {
+        return NextResponse.json({ error: "Current password is required to set a new password" }, { status: 400 });
+      }
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user?.passwordHash || !(await bcrypt.compare(data.currentPassword, user.passwordHash))) {
+        return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
+      }
       updateData.passwordHash = await bcrypt.hash(data.password, 12);
     }
     if (body.onboardingDone !== undefined) {

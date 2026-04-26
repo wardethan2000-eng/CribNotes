@@ -4,8 +4,12 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/lib/resend";
+import { rateLimit } from "@/lib/rate-limit";
+import type { NextRequest } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const rateLimitResponse = rateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
   try {
     const body = await request.json();
     const { email, password, name } = signupSchema.parse(body);
@@ -41,10 +45,7 @@ export async function POST(request: Request) {
 
     await sendVerificationEmail(email, token);
 
-    return NextResponse.json({ 
-      id: user.id,
-      email: user.email 
-    });
+    return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
