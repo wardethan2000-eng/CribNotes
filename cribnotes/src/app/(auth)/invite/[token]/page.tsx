@@ -16,6 +16,12 @@ interface InviteData {
   expired: boolean;
 }
 
+const roleLabels: Record<string, string> = {
+  PARENT: "Parent",
+  CARETAKER: "Caretaker",
+  BABYSITTER: "Babysitter",
+};
+
 function InviteContent({ token }: { token: string }) {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -90,7 +96,7 @@ function InviteContent({ token }: { token: string }) {
           {inviteData.ownerName} has invited you to track {inviteData.childName}
         </p>
         <p className="text-text-muted text-sm mb-6">
-          Role: {inviteData.role === "CAREGIVER" ? "Caregiver (can log events)" : "Viewer (read-only)"}
+          Role: {roleLabels[inviteData.role] || inviteData.role}
         </p>
         <div className="flex gap-3">
           <Button variant="primary" onClick={handleAccept} disabled={accepting}>

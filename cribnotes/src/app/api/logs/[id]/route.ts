@@ -73,7 +73,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         id: log.childId,
         OR: [
           { ownerId: userId },
-          { sharedWith: { some: { userId, accepted: true, role: "CAREGIVER" } } },
+          { sharedWith: { some: { userId, accepted: true } } },
         ],
       },
     });

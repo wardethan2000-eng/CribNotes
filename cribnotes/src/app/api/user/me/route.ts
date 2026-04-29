@@ -2,7 +2,17 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateUserSchema } from "@/lib/validations";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+
+type UserDesignation = "PARENT" | "CARETAKER" | "BABYSITTER";
+
+async function getUserDesignation(userId: string): Promise<UserDesignation> {
+  const [row] = await prisma.$queryRaw<{ designation: UserDesignation }[]>(Prisma.sql`
+    SELECT designation::text AS designation FROM "User" WHERE id = ${userId}
+  `);
+  return row?.designation || "PARENT";
+}
 
 export async function GET() {
   const session = await auth();
@@ -17,6 +27,7 @@ export async function GET() {
       id: user.id,
       email: user.email,
       name: user.name,
+      designation: await getUserDesignation(user.id),
       emailVerified: user.emailVerified,
       onboardingDone: user.onboardingDone,
     });
@@ -62,10 +73,17 @@ export async function PATCH(request: Request) {
       data: updateData,
     });
 
+    if (data.designation !== undefined) {
+      await prisma.$executeRaw(Prisma.sql`
+        UPDATE "User" SET designation = ${data.designation}::"UserDesignation" WHERE id = ${userId}
+      `);
+    }
+
     return NextResponse.json({
       id: user.id,
       email: user.email,
       name: user.name,
+      designation: data.designation ?? await getUserDesignation(user.id),
       onboardingDone: user.onboardingDone,
     });
   } catch (error: any) {

@@ -10,6 +10,14 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+type PersonRole = "PARENT" | "CARETAKER" | "BABYSITTER";
+
+const roleOptions: { value: PersonRole; label: string }[] = [
+  { value: "PARENT", label: "Parent" },
+  { value: "CARETAKER", label: "Caretaker" },
+  { value: "BABYSITTER", label: "Babysitter" },
+];
+
 interface OnboardingFlowProps {
   userName: string;
 }
@@ -19,7 +27,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
   const [childName, setChildName] = useState("");
   const [childDob, setChildDob] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"CAREGIVER" | "VIEWER">("CAREGIVER");
+  const [inviteRole, setInviteRole] = useState<PersonRole>("PARENT");
   const [createdChildId, setCreatedChildId] = useState<string | null>(null);
   const router = useRouter();
   const { update } = useSession();
@@ -135,27 +143,23 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
 
           {step === 3 && (
             <form onSubmit={handleInvite}>
-              <h2 className="font-display text-xl font-bold text-text-primary mb-1">Invite a Co-Parent</h2>
-              <p className="text-text-secondary mb-6">Share access with a partner or caregiver</p>
+              <h2 className="font-display text-xl font-bold text-text-primary mb-1">Invite Someone</h2>
+              <p className="text-text-secondary mb-6">Share access with a parent, caretaker, or babysitter</p>
               <div className="space-y-4">
                 <Input label="Email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="partner@email.com" />
                 <div>
                   <p className="text-sm text-text-secondary mb-2">Role</p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setInviteRole("CAREGIVER")}
-                      className={`flex-1 px-4 py-2 rounded-full text-sm ${inviteRole === "CAREGIVER" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
-                    >
-                      Caregiver
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInviteRole("VIEWER")}
-                      className={`flex-1 px-4 py-2 rounded-full text-sm ${inviteRole === "VIEWER" ? "bg-secondary text-base" : "bg-elevated text-text-secondary"}`}
-                    >
-                      Viewer
-                    </button>
+                  <div className="grid grid-cols-3 gap-2">
+                    {roleOptions.map((role) => (
+                      <button
+                        key={role.value}
+                        type="button"
+                        onClick={() => setInviteRole(role.value)}
+                        className={`px-3 py-2 rounded-2xl text-sm ${inviteRole === role.value ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
+                      >
+                        {role.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

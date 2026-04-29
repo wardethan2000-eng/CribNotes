@@ -1,7 +1,17 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
+
+type UserDesignation = "PARENT" | "CARETAKER" | "BABYSITTER";
+
+async function getUserDesignation(userId: string): Promise<UserDesignation> {
+  const [row] = await prisma.$queryRaw<{ designation: UserDesignation }[]>(Prisma.sql`
+    SELECT designation::text AS designation FROM "User" WHERE id = ${userId}
+  `);
+  return row?.designation || "PARENT";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -46,6 +56,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           onboardingDone: user.onboardingDone,
+          designation: await getUserDesignation(user.id),
         };
       },
     }),
@@ -55,11 +66,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.onboardingDone = (user as any).onboardingDone;
+        token.designation = (user as any).designation;
       }
       if (trigger === "update" && token.id) {
         const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
         if (dbUser) {
           token.onboardingDone = dbUser.onboardingDone;
+          token.designation = await getUserDesignation(dbUser.id);
         }
       }
       return token;
@@ -68,6 +81,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.onboardingDone = token.onboardingDone as boolean;
+        session.user.designation = token.designation as any;
       }
       return session;
     },

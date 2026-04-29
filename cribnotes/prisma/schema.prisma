@@ -8,8 +8,15 @@ datasource db {
 }
 
 enum ShareRole {
-  CAREGIVER
-  VIEWER
+  PARENT
+  CARETAKER
+  BABYSITTER
+}
+
+enum UserDesignation {
+  PARENT
+  CARETAKER
+  BABYSITTER
 }
 
 enum LogType {
@@ -65,6 +72,7 @@ model User {
   name          String?
   passwordHash  String?
   emailVerified DateTime?
+  designation   UserDesignation @default(PARENT)
   onboardingDone Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -97,7 +105,7 @@ model ChildShare {
   childId   String
   userId    String?
   email     String
-  role      ShareRole @default(CAREGIVER)
+  role      ShareRole @default(CARETAKER)
   token     String    @unique
   accepted  Boolean   @default(false)
   expiresAt DateTime

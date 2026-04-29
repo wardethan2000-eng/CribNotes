@@ -13,6 +13,20 @@ import { useAppStore } from "@/lib/store";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import { formatChildAge, formatDate } from "@/lib/utils";
 
+type PersonRole = "PARENT" | "CARETAKER" | "BABYSITTER";
+
+const roleOptions: { value: PersonRole; label: string }[] = [
+  { value: "PARENT", label: "Parent" },
+  { value: "CARETAKER", label: "Caretaker" },
+  { value: "BABYSITTER", label: "Babysitter" },
+];
+
+const roleLabels: Record<PersonRole, string> = {
+  PARENT: "Parent",
+  CARETAKER: "Caretaker",
+  BABYSITTER: "Babysitter",
+};
+
 async function api(url: string, method = "GET", body?: unknown) {
   const res = await fetch(url, {
     method,
@@ -48,12 +62,12 @@ export default function SettingsPage() {
   const [accountDeleteConfirm, setAccountDeleteConfirm] = useState(false);
   const [showInvite, setShowInvite] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"CAREGIVER" | "VIEWER">("CAREGIVER");
+  const [inviteRole, setInviteRole] = useState<PersonRole>("CARETAKER");
   const [exportingChild, setExportingChild] = useState<string | null>(null);
   const [exportRange, setExportRange] = useState("last30");
 
   const updateProfile = useMutation({
-    mutationFn: (data: { name?: string; currentPassword?: string; password?: string }) => api("/api/user/me", "PATCH", data),
+    mutationFn: (data: { name?: string; designation?: PersonRole; currentPassword?: string; password?: string }) => api("/api/user/me", "PATCH", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
       toast.success("Profile updated");
@@ -289,6 +303,26 @@ export default function SettingsPage() {
             placeholder="Your name"
           />
           <p className="text-sm text-text-secondary">{user?.email}</p>
+          <div>
+            <p className="text-sm font-medium text-text-secondary mb-2">Your designation</p>
+            <div className="grid grid-cols-3 gap-2">
+              {roleOptions.map((role) => (
+                <button
+                  key={role.value}
+                  type="button"
+                  onClick={() => updateProfile.mutate({ designation: role.value })}
+                  className={`px-3 py-2 rounded-2xl text-sm font-medium ${
+                    user?.designation === role.value ? "bg-primary text-base" : "bg-elevated text-text-secondary"
+                  }`}
+                >
+                  {role.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-text-muted mt-2">
+              You default to Parent when you add a child. Change this if your role is caretaker or babysitter.
+            </p>
+          </div>
           <Button variant="secondary" onClick={() => updateProfile.mutate({ name: editName })}>
             Save Profile
           </Button>
@@ -350,7 +384,7 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <SharesSection childId={child.id} ownerId={child.ownerId} currentUserId={user?.id} onInvite={() => { setShowInvite(child.id); setInviteEmail(""); setInviteRole("CAREGIVER"); }} onRevoke={(shareId) => revokeShare.mutate({ childId: child.id, shareId })} />
+            <SharesSection childId={child.id} ownerId={child.ownerId} currentUserId={user?.id} onInvite={() => { setShowInvite(child.id); setInviteEmail(""); setInviteRole("CARETAKER"); }} onRevoke={(shareId) => revokeShare.mutate({ childId: child.id, shareId })} />
 
             <div className="mt-2">
               <button onClick={() => { setExportingChild(child.id); setExportRange("last30"); }} className="text-sm text-secondary flex items-center gap-1">
@@ -391,19 +425,17 @@ export default function SettingsPage() {
           <Input label="Email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="partner@email.com" />
           <div>
             <p className="text-sm text-text-secondary mb-2">Role</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setInviteRole("CAREGIVER")}
-                className={`px-4 py-2 rounded-full text-sm ${inviteRole === "CAREGIVER" ? "bg-primary text-base" : "bg-surface text-text-secondary"}`}
-              >
-                Caregiver
-              </button>
-              <button
-                onClick={() => setInviteRole("VIEWER")}
-                className={`px-4 py-2 rounded-full text-sm ${inviteRole === "VIEWER" ? "bg-secondary text-base" : "bg-surface text-text-secondary"}`}
-              >
-                Viewer
-              </button>
+            <div className="grid grid-cols-3 gap-2">
+              {roleOptions.map((role) => (
+                <button
+                  key={role.value}
+                  type="button"
+                  onClick={() => setInviteRole(role.value)}
+                  className={`px-3 py-2 rounded-2xl text-sm ${inviteRole === role.value ? "bg-primary text-base" : "bg-surface text-text-secondary"}`}
+                >
+                  {role.label}
+                </button>
+              ))}
             </div>
           </div>
           <Button full onClick={() => showInvite && sendInvite.mutate({ childId: showInvite, email: inviteEmail, role: inviteRole })}>
@@ -465,8 +497,8 @@ function SharesSection({ childId, ownerId, currentUserId, onInvite, onRevoke }: 
               <div>
                 <p className="text-text-primary">{share.user?.name || share.email}</p>
                 <p className="flex items-center gap-2">
-                  <span className={share.role === "CAREGIVER" ? "text-primary" : "text-secondary"}>
-                    {share.role === "CAREGIVER" ? "Caregiver" : "Viewer"}
+                  <span className="text-primary">
+                    {roleLabels[share.role as PersonRole] || share.role}
                   </span>
                   <span className={share.accepted ? "text-success" : "text-warning"}>
                     {share.accepted ? "Active" : "Pending"}

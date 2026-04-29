@@ -4,6 +4,7 @@ declare module "next-auth" {
   interface User {
     id: string;
     onboardingDone?: boolean;
+    designation?: "PARENT" | "CARETAKER" | "BABYSITTER";
   }
   interface Session {
     user: {
@@ -11,6 +12,7 @@ declare module "next-auth" {
       email: string;
       name?: string | null;
       onboardingDone?: boolean;
+      designation?: "PARENT" | "CARETAKER" | "BABYSITTER";
     };
   }
 }
@@ -19,5 +21,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     onboardingDone?: boolean;
+    designation?: "PARENT" | "CARETAKER" | "BABYSITTER";
   }
 }

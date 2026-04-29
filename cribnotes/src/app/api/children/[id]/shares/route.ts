@@ -41,6 +41,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const body = await request.json();
     const { email, role } = body;
     if (!email || !role) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!["PARENT", "CARETAKER", "BABYSITTER"].includes(role)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
 
     const existing = await prisma.childShare.findFirst({
       where: { childId: params.id, email },

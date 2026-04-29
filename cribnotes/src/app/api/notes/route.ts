@@ -23,16 +23,17 @@ type RawNote = {
   childOwnerId: string;
   userName: string | null;
   userEmail: string;
+  userDesignation: string;
 };
 
 function isForUser(
   note: { audience: NoteAudience; attentionName: string | null },
-  role: "OWNER" | "CAREGIVER" | "VIEWER" | null,
+  role: "PARENT" | "CARETAKER" | "BABYSITTER" | null,
   user: { name: string | null; email: string }
 ) {
   if (note.audience === "EVERYONE") return true;
-  if (note.audience === "PARENTS") return role === "OWNER";
-  if (note.audience === "CAREGIVERS") return role === "CAREGIVER" || role === "VIEWER";
+  if (note.audience === "PARENTS") return role === "PARENT";
+  if (note.audience === "CAREGIVERS") return role === "CARETAKER" || role === "BABYSITTER";
 
   const attention = note.attentionName?.trim().toLowerCase();
   if (!attention) return false;
@@ -56,7 +57,11 @@ function serializeNote(note: RawNote) {
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
     user: { id: note.userId, name: note.userName, email: note.userEmail },
-    authorKind: note.childOwnerId === note.userId ? "Parent" : "Caretaker",
+    authorKind: note.userDesignation === "BABYSITTER"
+      ? "Babysitter"
+      : note.userDesignation === "CARETAKER"
+        ? "Caretaker"
+        : "Parent",
   };
 }
 
@@ -101,7 +106,8 @@ export async function GET(request: Request) {
           n."updatedAt",
           c."ownerId" AS "childOwnerId",
           u.name AS "userName",
-          u.email AS "userEmail"
+          u.email AS "userEmail",
+          u.designation::text AS "userDesignation"
         FROM "Note" n
         JOIN "Child" c ON c.id = n."childId"
         JOIN "User" u ON u.id = n."userId"
@@ -180,7 +186,8 @@ export async function POST(request: Request) {
         "updatedAt",
         (SELECT "ownerId" FROM "Child" WHERE id = "Note"."childId") AS "childOwnerId",
         (SELECT name FROM "User" WHERE id = "Note"."userId") AS "userName",
-        (SELECT email FROM "User" WHERE id = "Note"."userId") AS "userEmail"
+        (SELECT email FROM "User" WHERE id = "Note"."userId") AS "userEmail",
+        (SELECT designation::text FROM "User" WHERE id = "Note"."userId") AS "userDesignation"
     `);
 
     return NextResponse.json(serializeNote(note));
