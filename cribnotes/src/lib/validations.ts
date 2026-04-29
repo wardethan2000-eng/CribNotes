@@ -58,6 +58,16 @@ export const updateLogSchema = z.object({
   pumpUnit: z.enum(["OZ", "ML"]).optional(),
 });
 
+export const createNoteSchema = z.object({
+  childId: z.string().uuid(),
+  title: z.string().trim().min(1, "Title is required").max(120),
+  body: z.string().trim().min(1, "Note is required").max(2000),
+  purpose: z.enum(["GUIDE", "INSTRUCTION", "UPDATE", "QUESTION", "GENERAL"]).default("GENERAL"),
+  audience: z.enum(["EVERYONE", "PARENTS", "CAREGIVERS", "SPECIFIC"]).default("EVERYONE"),
+  attentionName: z.string().trim().max(100).optional(),
+  pinned: z.boolean().optional(),
+});
+
 export const inviteSchema = z.object({
   childId: z.string().uuid(),
   email: z.string().email("Invalid email"),
@@ -76,4 +86,5 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateChildInput = z.infer<typeof createChildSchema>;
 export type CreateLogInput = z.infer<typeof createLogSchema>;
 export type UpdateLogInput = z.infer<typeof updateLogSchema>;
+export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 export type InviteInput = z.infer<typeof inviteSchema>;
