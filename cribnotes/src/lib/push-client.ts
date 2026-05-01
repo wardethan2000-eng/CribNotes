@@ -13,6 +13,15 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} (${ms}ms)`)), ms);
+    }),
+  ]);
+}
+
 type PushDiagnostic = {
   supported: boolean;
   notificationPermission: NotificationPermission | "unavailable";
@@ -30,56 +39,42 @@ function isStandaloneDisplay() {
     || ("standalone" in window.navigator && Boolean((window.navigator as any).standalone));
 }
 
-async function waitForActiveRegistration(registration: ServiceWorkerRegistration) {
-  if (registration.active) return registration;
+async function getReadyRegistration() {
+  const registration = await withTimeout(
+    navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }),
+    10000,
+    "Service worker registration timed out"
+  );
 
-  const installingWorker = registration.installing || registration.waiting;
-  if (!installingWorker) {
-    return Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise<never>((_, reject) => {
-        window.setTimeout(() => reject(new Error("Service worker setup timed out. Close and reopen the installed app, then try again.")), 30000);
-      }),
-    ]);
-  }
-
-  if (installingWorker.state === "activated") {
+  if (registration.active) {
     return registration;
   }
 
-  if (installingWorker.state === "installed" && !registration.active) {
-    installingWorker.postMessage({ type: "SKIP_WAITING" });
+  const worker = registration.installing || registration.waiting;
+  if (worker) {
+    return new Promise<ServiceWorkerRegistration>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error("Service worker activation timed out. Close and reopen the installed app, then try again."));
+      }, 15000);
+
+      const onStateChange = () => {
+        if (worker.state === "activated") {
+          clearTimeout(timer);
+          worker.removeEventListener("statechange", onStateChange);
+          resolve(registration);
+        }
+        if (worker.state === "redundant") {
+          clearTimeout(timer);
+          worker.removeEventListener("statechange", onStateChange);
+          reject(new Error("Service worker was replaced. Refresh the page and try again."));
+        }
+      };
+
+      worker.addEventListener("statechange", onStateChange);
+    });
   }
 
-  await new Promise<void>((resolve, reject) => {
-    const timeout = window.setTimeout(() => {
-      reject(new Error("Service worker setup timed out. Close and reopen the installed app, then try again."));
-    }, 30000);
-
-    installingWorker.addEventListener("statechange", () => {
-      if (installingWorker.state === "redundant") {
-        window.clearTimeout(timeout);
-        reject(new Error("Service worker setup was interrupted. Refresh the app and try again."));
-      }
-
-      if (installingWorker.state === "activated") {
-        window.clearTimeout(timeout);
-        resolve();
-      }
-    });
-  });
-
-  return registration;
-}
-
-async function getReadyRegistration() {
-  await navigator.serviceWorker.register("/sw.js", {
-    scope: "/",
-    updateViaCache: "none",
-  });
-  const registration = await navigator.serviceWorker.ready;
-  registration.update().catch(() => undefined);
-  return waitForActiveRegistration(registration);
+  throw new Error("Service worker is not active. Refresh the page and try again.");
 }
 
 export function isPushSupported() {
@@ -89,25 +84,42 @@ export function isPushSupported() {
     && "Notification" in window;
 }
 
-export async function subscribeToPush(publicKey: string) {
+export async function subscribeToPush(
+  publicKey: string,
+  permissionPromise?: Promise<NotificationPermission>
+) {
   if (!isPushSupported()) {
     throw new Error("Push notifications are not supported on this device.");
   }
 
-  const permission = await Notification.requestPermission();
+  const permission = await withTimeout(
+    permissionPromise || Notification.requestPermission(),
+    15000,
+    "Notification permission request timed out"
+  );
+
   if (permission !== "granted") {
     throw new Error("Notification permission was not granted.");
   }
 
   try {
     const registration = await getReadyRegistration();
-    const existing = await registration.pushManager.getSubscription();
+
+    const existing = await withTimeout(
+      registration.pushManager.getSubscription(),
+      10000,
+      "Checking existing subscription timed out"
+    );
     if (existing) return existing;
 
-    return await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
+    return await withTimeout(
+      registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      }),
+      15000,
+      "Push subscription timed out"
+    );
   } catch (error: any) {
     const details = await getPushDiagnostics().catch(() => null);
     const state = details

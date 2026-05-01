@@ -177,10 +177,14 @@ export default function SettingsPage() {
       return;
     }
 
+    // Kick off permission request immediately (synchronously) so iOS Safari
+    // keeps the user gesture context. Do NOT await anything before this.
+    const permissionPromise = Notification.requestPermission();
+
     setIsSubscribing(true);
     setNotificationDebug(null);
     try {
-      const subscription = await subscribeToPush(vapid.publicKey);
+      const subscription = await subscribeToPush(vapid.publicKey, permissionPromise);
       await api("/api/notifications/subscribe", "POST", subscription.toJSON());
       setNotificationPermission(Notification.permission);
       queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] });
