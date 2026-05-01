@@ -1,9 +1,9 @@
-"use client";
+const isBrowser = typeof window !== "undefined";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
+  const rawData = atob(base64);
   const outputArray = new Uint8Array(rawData.length);
 
   for (let i = 0; i < rawData.length; i += 1) {
@@ -35,50 +35,53 @@ type PushDiagnostic = {
 };
 
 function isStandaloneDisplay() {
+  if (!isBrowser) return false;
   return window.matchMedia("(display-mode: standalone)").matches
     || ("standalone" in window.navigator && Boolean((window.navigator as any).standalone));
 }
 
 async function getReadyRegistration() {
-  const registration = await withTimeout(
-    navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }),
-    10000,
-    "Service worker registration timed out"
-  );
+  if (!isBrowser) throw new Error("Not in browser");
+
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((r) => r.unregister().catch(() => {})));
+
+  await new Promise((r) => setTimeout(r, 500));
+
+  const registration = await navigator.serviceWorker.register("/sw.js", {
+    scope: "/",
+    updateViaCache: "none",
+  });
 
   if (registration.active) {
     return registration;
   }
 
   const worker = registration.installing || registration.waiting;
-  if (worker) {
-    return new Promise<ServiceWorkerRegistration>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error("Service worker activation timed out. Close and reopen the installed app, then try again."));
-      }, 15000);
-
-      const onStateChange = () => {
-        if (worker.state === "activated") {
-          clearTimeout(timer);
-          worker.removeEventListener("statechange", onStateChange);
-          resolve(registration);
-        }
-        if (worker.state === "redundant") {
-          clearTimeout(timer);
-          worker.removeEventListener("statechange", onStateChange);
-          reject(new Error("Service worker was replaced. Refresh the page and try again."));
-        }
-      };
-
-      worker.addEventListener("statechange", onStateChange);
-    });
+  if (!worker) {
+    throw new Error("No service worker found. Refresh the page and try again.");
   }
 
-  throw new Error("Service worker is not active. Refresh the page and try again.");
+  return new Promise<ServiceWorkerRegistration>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("Service worker not active. Refresh the page and try again."));
+    }, 20000);
+
+    worker.addEventListener("statechange", function onchange() {
+      if (worker.state === "activated") {
+        clearTimeout(timeout);
+        resolve(registration);
+      }
+    });
+
+    if (worker.state === "installed") {
+      worker.postMessage({ type: "SKIP_WAITING" });
+    }
+  });
 }
 
 export function isPushSupported() {
-  return typeof window !== "undefined"
+  return isBrowser
     && "serviceWorker" in navigator
     && "PushManager" in window
     && "Notification" in window;
@@ -88,6 +91,7 @@ export async function subscribeToPush(
   publicKey: string,
   permissionPromise?: Promise<NotificationPermission>
 ) {
+  if (!isBrowser) throw new Error("Not in browser");
   if (!isPushSupported()) {
     throw new Error("Push notifications are not supported on this device.");
   }
@@ -104,12 +108,7 @@ export async function subscribeToPush(
 
   try {
     const registration = await getReadyRegistration();
-
-    const existing = await withTimeout(
-      registration.pushManager.getSubscription(),
-      10000,
-      "Checking existing subscription timed out"
-    );
+    const existing = await registration.pushManager.getSubscription();
     if (existing) return existing;
 
     return await withTimeout(
@@ -130,12 +129,32 @@ export async function subscribeToPush(
 }
 
 export async function getPushSubscription() {
+  if (!isBrowser) return null;
   if (!isPushSupported()) return null;
-  const registration = await getReadyRegistration();
-  return registration.pushManager.getSubscription();
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  if (registrations.length === 0) return null;
+  try {
+    return await registrations[0].pushManager.getSubscription();
+  } catch {
+    return null;
+  }
 }
 
 export async function getPushDiagnostics(): Promise<PushDiagnostic> {
+  if (!isBrowser) {
+    return {
+      supported: false,
+      notificationPermission: "unavailable",
+      hasController: false,
+      registrationScope: null,
+      activeState: null,
+      installingState: null,
+      waitingState: null,
+      standalone: false,
+      userAgent: "",
+    };
+  }
+
   if (!isPushSupported()) {
     return {
       supported: false,
