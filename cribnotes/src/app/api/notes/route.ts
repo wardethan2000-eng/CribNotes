@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessChild, canWriteToChild, getChildRole } from "@/lib/access";
 import { createNoteSchema } from "@/lib/validations";
+import { notifyNoteAttention } from "@/lib/push";
 
 type NoteAudience = "EVERYONE" | "PARENTS" | "CAREGIVERS" | "SPECIFIC";
 type NoteEditPermission = "CREATOR_ONLY" | "PARENTS" | "CAREGIVERS" | "EVERYONE";
@@ -207,6 +208,16 @@ export async function POST(request: Request) {
         (SELECT email FROM "User" WHERE id = "Note"."userId") AS "userEmail",
         (SELECT designation::text FROM "User" WHERE id = "Note"."userId") AS "userDesignation"
     `);
+
+    if (data.audience === "SPECIFIC") {
+      await notifyNoteAttention({
+        childId: data.childId,
+        authorId: userId,
+        title: data.title,
+        body: data.body,
+        attentionName: data.attentionName || null,
+      });
+    }
 
     return NextResponse.json(serializeNote(note, { userId, role: await getChildRole(userId, data.childId) }));
   } catch (error: any) {

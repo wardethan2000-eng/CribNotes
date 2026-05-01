@@ -88,6 +88,8 @@ model User {
   sharedAccess   ChildShare[]
   logs           Log[]
   notes          Note[]
+  pushSubscriptions PushSubscription[]
+  notificationPreferences NotificationPreference[]
   sessions     Session[]
   accounts      Account[]
 }
@@ -105,6 +107,41 @@ model Child {
   sharedWith ChildShare[]
   logs       Log[]
   notes      Note[]
+  notificationPreferences NotificationPreference[]
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh     String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model NotificationPreference {
+  id                         String   @id @default(uuid())
+  userId                     String
+  childId                    String
+  noteAttentionEnabled       Boolean  @default(true)
+  feedReminderEnabled        Boolean  @default(false)
+  feedReminderIntervalMinutes Int     @default(120)
+  lastFeedReminderSentForLogId String?
+  lastFeedReminderSentAt     DateTime?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, childId])
+  @@index([childId, feedReminderEnabled])
 }
 
 model ChildShare {

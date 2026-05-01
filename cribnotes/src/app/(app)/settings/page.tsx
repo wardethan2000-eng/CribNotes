@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { Pencil, Trash2, Plus, Download, UserPlus, Smartphone } from "lucide-react";
+import { Bell, Pencil, Trash2, Plus, Download, UserPlus, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { usePwaInstall } from "@/lib/usePwaInstall";
+import { isPushSupported, subscribeToPush } from "@/lib/push-client";
 import { formatChildAge, formatDate } from "@/lib/utils";
 
 type PersonRole = "PARENT" | "CARETAKER" | "BABYSITTER";
@@ -41,12 +41,17 @@ async function api(url: string, method = "GET", body?: unknown) {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { selectedChildId, setSelectedChildId } = useAppStore();
 
   const { data: user } = useQuery({ queryKey: ["user"], queryFn: () => api("/api/user/me") });
   const { data: children = [] } = useQuery({ queryKey: ["children"], queryFn: () => api("/api/children") });
+  const { data: vapid } = useQuery({ queryKey: ["notifications", "vapid"], queryFn: () => api("/api/notifications/vapid-key") });
+  const { data: notificationPreferences } = useQuery({
+    queryKey: ["notifications", "preferences", selectedChildId],
+    queryFn: () => api(`/api/notifications/preferences?childId=${selectedChildId}`),
+    enabled: !!selectedChildId,
+  });
 
   const [editName, setEditName] = useState("");
   const [oldPassword, setOldPassword] = useState("");
@@ -65,6 +70,19 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState<PersonRole>("CARETAKER");
   const [exportingChild, setExportingChild] = useState<string | null>(null);
   const [exportRange, setExportRange] = useState("last30");
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [feedInterval, setFeedInterval] = useState(120);
+
+  useEffect(() => {
+    setNotificationPermission(isPushSupported() ? Notification.permission : "unsupported");
+  }, []);
+
+  useEffect(() => {
+    if (notificationPreferences?.feedReminderIntervalMinutes) {
+      setFeedInterval(notificationPreferences.feedReminderIntervalMinutes);
+    }
+  }, [notificationPreferences?.feedReminderIntervalMinutes]);
 
   const updateProfile = useMutation({
     mutationFn: (data: { name?: string; designation?: PersonRole; currentPassword?: string; password?: string }) => api("/api/user/me", "PATCH", data),
@@ -137,6 +155,40 @@ export default function SettingsPage() {
     },
     onError: (e) => toast.error(e.message),
   });
+
+  const updateNotificationPreferences = useMutation({
+    mutationFn: (data: {
+      childId: string;
+      noteAttentionEnabled?: boolean;
+      feedReminderEnabled?: boolean;
+      feedReminderIntervalMinutes?: number;
+    }) => api("/api/notifications/preferences", "PATCH", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] });
+      toast.success("Notification settings updated");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const enableNotifications = async () => {
+    if (!vapid?.configured || !vapid?.publicKey) {
+      toast.error("Push notifications are not configured on the server");
+      return;
+    }
+
+    setIsSubscribing(true);
+    try {
+      const subscription = await subscribeToPush(vapid.publicKey);
+      await api("/api/notifications/subscribe", "POST", subscription.toJSON());
+      setNotificationPermission(Notification.permission);
+      queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] });
+      toast.success("Notifications enabled on this device");
+    } catch (error: any) {
+      toast.error(error.message || "Could not enable notifications");
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   const handleExport = async (childId: string, childName: string) => {
     setExportingChild(childId);
@@ -292,6 +344,104 @@ export default function SettingsPage() {
           </div>
         </section>
       )}
+
+      <section className="space-y-4">
+        <h2 className="font-display text-lg font-semibold text-text-primary">Notifications</h2>
+        <div className="bg-surface rounded-2xl p-4 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold text-text-primary">This device</p>
+              <p className="text-sm text-text-secondary mt-1">
+                {notificationPermission === "unsupported"
+                  ? "Push notifications are not supported in this browser."
+                  : notificationPreferences?.hasSubscription
+                    ? "Push notifications are enabled on this account."
+                    : "Enable alerts for notes and feeding reminders."}
+              </p>
+              {isIos && !isInstalled && (
+                <p className="text-xs text-text-muted mt-2">On iPhone or iPad, install CribNotes to your Home Screen first, then enable notifications from the installed app.</p>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={enableNotifications}
+              disabled={isSubscribing || notificationPermission === "unsupported" || !vapid?.configured}
+            >
+              <Bell size={16} className="mr-1" /> {isSubscribing ? "Enabling..." : "Enable"}
+            </Button>
+          </div>
+
+          {!vapid?.configured && (
+            <p className="text-xs text-warning">Server VAPID keys are missing. Add NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY before push can be enabled.</p>
+          )}
+
+          {selectedChildId ? (
+            <div className="space-y-4 pt-4 border-t border-border">
+              <p className="text-sm font-medium text-text-secondary">
+                Settings for {children.find((child: any) => child.id === selectedChildId)?.name || "selected child"}
+              </p>
+
+              <label className="flex items-center justify-between gap-3">
+                <span>
+                  <span className="block text-sm font-medium text-text-primary">Notes for my attention</span>
+                  <span className="block text-xs text-text-muted">Alert me when a note is addressed to my name or email.</span>
+                </span>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 accent-primary"
+                  checked={notificationPreferences?.noteAttentionEnabled ?? true}
+                  onChange={(e) => updateNotificationPreferences.mutate({
+                    childId: selectedChildId,
+                    noteAttentionEnabled: e.target.checked,
+                  })}
+                />
+              </label>
+
+              <label className="flex items-center justify-between gap-3">
+                <span>
+                  <span className="block text-sm font-medium text-text-primary">Feeding reminders</span>
+                  <span className="block text-xs text-text-muted">Alert me when the latest feeding is older than the selected interval.</span>
+                </span>
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 accent-primary"
+                  checked={notificationPreferences?.feedReminderEnabled ?? false}
+                  onChange={(e) => updateNotificationPreferences.mutate({
+                    childId: selectedChildId,
+                    feedReminderEnabled: e.target.checked,
+                    feedReminderIntervalMinutes: feedInterval,
+                  })}
+                />
+              </label>
+
+              <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+                <Input
+                  label="Feeding interval, minutes"
+                  type="number"
+                  min="15"
+                  max="720"
+                  step="15"
+                  value={String(feedInterval)}
+                  onChange={(e) => setFeedInterval(Number(e.target.value))}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => updateNotificationPreferences.mutate({
+                    childId: selectedChildId,
+                    feedReminderIntervalMinutes: feedInterval,
+                  })}
+                >
+                  Save
+                </Button>
+              </div>
+              <p className="text-xs text-text-muted">Example: enter 120 to send a reminder two hours after the most recent feed log.</p>
+            </div>
+          ) : (
+            <p className="text-sm text-text-secondary">Select or add a child to configure notification rules.</p>
+          )}
+        </div>
+      </section>
 
       <section className="space-y-4">
         <h2 className="font-display text-lg font-semibold text-text-primary">My Profile</h2>
