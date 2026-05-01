@@ -33,43 +33,24 @@ export async function subscribeToPush(
   publicKey: string,
   permissionPromise?: Promise<NotificationPermission>
 ): Promise<PushSubscription> {
-  if (!isBrowser) {
-    throw new Error("Not in browser");
-  }
-  if (!isPushSupported()) {
-    throw new Error("Push notifications are not supported on this device.");
-  }
+  if (!isBrowser) throw new Error("Not in browser");
+  if (!isPushSupported()) throw new Error("Push notifications are not supported on this device.");
 
   const permission = await timeout(
     permissionPromise || Notification.requestPermission(),
-    30000,
+    60000,
     "Notification permission prompt did not complete"
   );
-  if (permission !== "granted") {
-    throw new Error("Notification permission was not granted.");
-  }
+  if (permission !== "granted") throw new Error("Notification permission was not granted.");
 
   const registration = await timeout(
-    navigator.serviceWorker.register("/sw.js", {
-      scope: "/",
-      updateViaCache: "none",
-    }),
-    30000,
-    "Service worker registration timed out"
-  );
-
-  await timeout(
     navigator.serviceWorker.ready,
     30000,
-    "Service worker did not activate"
+    "Service worker not active. Make sure notifications are enabled in your device settings."
   );
 
-  registration.update().catch(() => {});
-
   const existing = await registration.pushManager.getSubscription().catch(() => null);
-  if (existing) {
-    return existing;
-  }
+  if (existing) return existing;
 
   return await timeout(
     registration.pushManager.subscribe({
