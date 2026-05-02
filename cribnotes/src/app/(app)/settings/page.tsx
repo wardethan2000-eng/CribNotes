@@ -645,18 +645,20 @@ function SharesSection({ childId, ownerId, currentUserId, onInvite, onRevoke }: 
   });
 
   const isOwner = ownerId === currentUserId;
+  const isParent = isOwner || shares.some((s: any) => s.user?.id === currentUserId && s.accepted && s.role === "PARENT");
+  const canInvite = isParent;
 
   return (
     <div className="mt-3 pt-3 border-t border-border">
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm font-medium text-text-secondary">Sharing</p>
-        {isOwner && (
+        {canInvite && (
           <button onClick={onInvite} className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
             <UserPlus size={14} /> Invite
           </button>
         )}
       </div>
-      {shares.length === 0 && !isOwner ? (
+      {shares.length === 0 && !canInvite ? (
         <p className="text-xs text-text-muted">No one else has access</p>
       ) : (
         <div className="space-y-2">
@@ -673,12 +675,12 @@ function SharesSection({ childId, ownerId, currentUserId, onInvite, onRevoke }: 
                   </span>
                 </p>
               </div>
-              {isOwner && (
+              {canInvite && (
                 <button onClick={() => onRevoke(share.id)} className="text-xs text-danger hover:underline">Revoke</button>
               )}
             </div>
           ))}
-          {shares.length === 0 && isOwner && (
+          {shares.length === 0 && canInvite && (
             <p className="text-xs text-text-muted">No one else has access yet</p>
           )}
         </div>

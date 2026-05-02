@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { canInviteToChild } from "@/lib/access";
 
 export async function DELETE(request: Request, { params }: { params: { id: string; shareId: string } }) {
   const session = await auth();
@@ -8,11 +9,8 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   const userId = session.user.id;
 
   try {
-    const child = await prisma.child.findUnique({
-      where: { id: params.id, ownerId: userId },
-    });
-
-    if (!child) {
+    const canInvite = await canInviteToChild(userId, params.id);
+    if (!canInvite) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

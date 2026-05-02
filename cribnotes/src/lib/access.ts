@@ -36,6 +36,19 @@ export async function isOwner(userId: string, childId: string) {
   return !!child;
 }
 
+export async function canInviteToChild(userId: string, childId: string) {
+  const child = await prisma.child.findFirst({
+    where: {
+      id: childId,
+      OR: [
+        { ownerId: userId },
+        { sharedWith: { some: { userId, accepted: true, role: "PARENT" } } },
+      ],
+    },
+  });
+  return !!child;
+}
+
 export async function getChildRole(userId: string, childId: string): Promise<"PARENT" | "CARETAKER" | "BABYSITTER" | null> {
   const [ownedChild] = await prisma.$queryRaw<{ designation: PersonRole }[]>(Prisma.sql`
     SELECT u.designation::text AS designation
