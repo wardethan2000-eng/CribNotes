@@ -6,7 +6,13 @@ export function formatRelativeTime(date: Date): string {
   if (diffHours < 12) {
     return formatDistanceToNow(date, { addSuffix: true });
   }
-  return format(date, "h:mm a");
+  if (diffHours < 24) {
+    return `Yesterday at ${format(date, "h:mm a")}`;
+  }
+  if (diffHours < 48) {
+    return `${format(date, "EEEE")} at ${format(date, "h:mm a")}`;
+  }
+  return `${format(date, "MMM d")} at ${format(date, "h:mm a")}`;
 }
 
 export function formatTime(date: Date): string {

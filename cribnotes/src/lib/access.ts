@@ -16,19 +16,6 @@ export async function canAccessChild(userId: string, childId: string) {
   return child;
 }
 
-export async function canWriteToChild(userId: string, childId: string) {
-  const child = await prisma.child.findFirst({
-    where: {
-      id: childId,
-      OR: [
-        { ownerId: userId },
-        { sharedWith: { some: { userId, accepted: true } } },
-      ],
-    },
-  });
-  return child;
-}
-
 export async function isOwner(userId: string, childId: string) {
   const child = await prisma.child.findFirst({
     where: { id: childId, ownerId: userId },

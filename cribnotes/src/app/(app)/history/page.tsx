@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -8,7 +6,6 @@ import { LogRow } from "@/components/history/LogRow";
 import { EditLogModal } from "@/components/history/EditLogModal";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
-import { Moon, Baby, Droplets, MoreVertical } from "lucide-react";
 
 export default function HistoryPage() {
   const selectedChildId = useAppStore((s) => s.selectedChildId);
@@ -16,6 +13,7 @@ export default function HistoryPage() {
   const [dateRange, setDateRange] = useState<"today" | "week" | "month">("week");
   const [activeTypes, setActiveTypes] = useState<string[]>(["WAKE", "SLEEP", "FEED", "DIAPER", "NURSE", "PUMP"]);
   const [editingLog, setEditingLog] = useState<any>(null);
+  const [cursors, setCursors] = useState<string[]>([]);
 
   const getDateRange = () => {
     const now = new Date();
@@ -28,21 +26,46 @@ export default function HistoryPage() {
 
   const { from, to } = getDateRange();
 
+  const lastCursor = cursors.length > 0 ? cursors[cursors.length - 1] : undefined;
+
   const { data: logsData, isLoading } = useQuery({
-    queryKey: ["logs", selectedChildId, dateRange, activeTypes],
+    queryKey: ["logs", selectedChildId, dateRange, activeTypes, cursors.length],
     queryFn: () => {
       const params = new URLSearchParams({
         childId: selectedChildId!,
         from: from.toISOString(),
         to: to.toISOString(),
         type: activeTypes.join(","),
+        limit: "50",
       });
+      if (lastCursor) params.set("cursor", lastCursor);
       return fetch(`/api/logs?${params}`).then((r) => r.json());
     },
     enabled: !!selectedChildId,
   });
 
   const logs = logsData?.logs || [];
+  const hasMore = !!logsData?.nextCursor;
+
+  const handleLoadMore = () => {
+    if (logsData?.nextCursor) {
+      setCursors((prev) => [...prev, logsData.nextCursor]);
+    }
+  };
+
+  const handleDateRangeChange = (r: "today" | "week" | "month") => {
+    setDateRange(r);
+    setCursors([]);
+  };
+
+  const toggleType = (type: string) => {
+    setActiveTypes((prev) => {
+      const next = prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type];
+      if (next.length === 0 && activeTypes.includes(type)) return prev;
+      return next;
+    });
+    setCursors([]);
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => fetch(`/api/logs/${id}`, { method: "DELETE" }).then((r) => r.json()),
@@ -60,10 +83,6 @@ export default function HistoryPage() {
       });
     },
   });
-
-  const toggleType = (type: string) => {
-    setActiveTypes((prev) => prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]);
-  };
 
   const groupedLogs = logs.reduce((acc: Record<string, any[]>, log: any) => {
     const date = format(new Date(log.occurredAt), "yyyy-MM-dd");
@@ -99,7 +118,7 @@ export default function HistoryPage() {
         {(["today", "week", "month"] as const).map((r) => (
           <button
             key={r}
-            onClick={() => setDateRange(r)}
+            onClick={() => handleDateRangeChange(r)}
             className={`px-4 py-2 rounded-full text-sm font-medium capitalize shrink-0 ${
               dateRange === r ? "bg-primary text-base" : "bg-surface text-text-secondary"
             }`}
@@ -123,7 +142,7 @@ export default function HistoryPage() {
         ))}
       </div>
 
-      {isLoading ? (
+      {isLoading && cursors.length === 0 ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => <div key={i} className="bg-surface rounded-2xl h-16 animate-pulse" />)}
         </div>
@@ -132,18 +151,27 @@ export default function HistoryPage() {
           <p className="text-text-secondary">No logs found for this period.</p>
         </div>
       ) : (
-        Object.entries(groupedLogs)
-          .sort(([a], [b]) => b.localeCompare(a))
-          .map(([date, dayLogs]: [string, any]) => (
-            <div key={date} className="mb-6">
-              <h2 className="font-display text-sm font-semibold text-text-secondary mb-2">{formatDateHeading(date)}</h2>
-              <div className="space-y-2">
-                {dayLogs.map((log: any) => (
-                  <LogRow key={log.id} log={log} onEdit={() => setEditingLog(log)} onDelete={() => deleteMutation.mutate(log.id)} />
-                ))}
+        <>
+          {Object.entries(groupedLogs)
+            .sort(([a], [b]) => b.localeCompare(a))
+            .map(([date, dayLogs]: [string, any]) => (
+              <div key={date} className="mb-6">
+                <h2 className="font-display text-sm font-semibold text-text-secondary mb-2">{formatDateHeading(date)}</h2>
+                <div className="space-y-2">
+                  {dayLogs.map((log: any) => (
+                    <LogRow key={log.id} log={log} onEdit={() => setEditingLog(log)} onDelete={() => deleteMutation.mutate(log.id)} />
+                  ))}
+                </div>
               </div>
+            ))}
+          {(hasMore || isLoading) && (
+            <div className="flex justify-center py-4">
+              <Button variant="secondary" onClick={handleLoadMore} disabled={isLoading}>
+                {isLoading ? "Loading..." : "Load More"}
+              </Button>
             </div>
-          ))
+          )}
+        </>
       )}
 
       {editingLog && (

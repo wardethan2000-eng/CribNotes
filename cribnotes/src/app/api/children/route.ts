@@ -40,6 +40,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, birthDate } = createChildSchema.parse(body);
 
+    const existing = await prisma.child.findFirst({
+      where: { ownerId: userId, name },
+    });
+    if (existing) {
+      return NextResponse.json({ error: "You already have a child with this name" }, { status: 409 });
+    }
+
     const child = await prisma.child.create({
       data: {
         name,

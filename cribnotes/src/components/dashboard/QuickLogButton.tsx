@@ -10,6 +10,7 @@ interface QuickLogButtonProps {
   color: "primary" | "secondary" | "warning";
   onClick: () => void;
   haptic?: boolean;
+  disabled?: boolean;
 }
 
 const colorMap = {
@@ -31,7 +32,7 @@ const colorMap = {
 };
 
 const QuickLogButton = forwardRef<HTMLButtonElement, QuickLogButtonProps>(
-  ({ icon: Icon, label, color, onClick, haptic = true }, ref) => {
+  ({ icon: Icon, label, color, onClick, haptic = true, disabled = false }, ref) => {
     const handlePointerDown = () => {
       if (haptic && typeof navigator !== "undefined" && "vibrate" in navigator) {
         navigator.vibrate(50);
@@ -43,11 +44,13 @@ const QuickLogButton = forwardRef<HTMLButtonElement, QuickLogButtonProps>(
     return (
       <button
         ref={ref}
+        disabled={disabled}
         className={cn(
           "min-w-[120px] min-h-[120px] sm:min-w-[140px] sm:min-h-[140px]",
           "rounded-3xl flex flex-col items-center justify-center gap-2",
           "transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary",
           "bg-surface border border-border hover:bg-elevated",
+          "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
           c.shadow,
           c.text
         )}

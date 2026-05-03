@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canAccessChild, canWriteToChild, getChildRole } from "@/lib/access";
+import { canAccessChild, getChildRole } from "@/lib/access";
 import { createNoteSchema } from "@/lib/validations";
 import { notifyNoteAttention } from "@/lib/push";
 
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createNoteSchema.parse(body);
 
-    const child = await canWriteToChild(userId, data.childId);
+    const child = await canAccessChild(userId, data.childId);
     if (!child) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

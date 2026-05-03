@@ -27,9 +27,11 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
   const [pumpUnit, setPumpUnit] = useState<"OZ" | "ML">("OZ");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     if (log && open) {
+      setConfirmed(false);
       setOccurredAt(format(new Date(log.occurredAt), "yyyy-MM-dd'T'HH:mm"));
       setFeedAmount(log.feedAmount != null ? String(log.feedAmount) : "");
       setFeedUnit(log.feedUnit || "OZ");
@@ -45,6 +47,10 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirmed) {
+      setConfirmed(true);
+      return;
+    }
     setSaving(true);
     try {
       const data: any = {
@@ -161,9 +167,23 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-3 bg-elevated rounded-2xl text-text-primary placeholder:text-text-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary resize-none" rows={2} placeholder="Optional notes..." />
         </div>
 
+        {confirmed && (
+          <p className="text-xs text-center text-warning bg-warning/5 rounded-xl py-2">
+            Review your changes above, then confirm to save
+          </p>
+        )}
+
         <div className="flex gap-3 pt-2">
-          <Button variant="secondary" full onClick={onClose}>Cancel</Button>
-          <Button full disabled={saving}>{saving ? "Saving..." : "Save"}</Button>
+          <Button
+            variant="secondary"
+            full
+            onClick={() => confirmed ? setConfirmed(false) : onClose()}
+          >
+            {confirmed ? "Go Back" : "Cancel"}
+          </Button>
+          <Button variant={confirmed ? "danger" : "primary"} full disabled={saving}>
+            {saving ? "Saving..." : confirmed ? "Confirm Save" : "Review Changes"}
+          </Button>
         </div>
       </form>
     </Modal>

@@ -36,6 +36,8 @@ export default function QuickLogGrid() {
       }),
   });
 
+  const pending = logMutation.isPending;
+
   const handleLog = (type: "WAKE" | "SLEEP" | "FEED" | "DIAPER" | "NURSE" | "PUMP") => {
     if (!selectedChildId) {
       toast.error("Please select a child first");
@@ -84,36 +86,42 @@ export default function QuickLogGrid() {
           label="Woke Up"
           color="warning"
           onClick={() => handleLog("WAKE")}
+          disabled={pending}
         />
         <QuickLogButton
           icon={Moon}
           label="Asleep"
           color="secondary"
           onClick={() => handleLog("SLEEP")}
+          disabled={pending}
         />
         <QuickLogButton
           icon={Baby}
           label="Fed"
           color="primary"
           onClick={() => handleLog("FEED")}
+          disabled={pending}
         />
         <QuickLogButton
           icon={Droplets}
           label="Diaper"
           color="secondary"
           onClick={() => handleLog("DIAPER")}
+          disabled={pending}
         />
         <QuickLogButton
           icon={Heart}
           label="Nursed"
           color="warning"
           onClick={() => handleLog("NURSE")}
+          disabled={pending}
         />
         <QuickLogButton
           icon={Milk}
           label="Pumped"
           color="secondary"
           onClick={() => handleLog("PUMP")}
+          disabled={pending}
         />
       </div>
       <FeedDetailsSheet

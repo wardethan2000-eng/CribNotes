@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateLogSchema } from "@/lib/validations";
-import { canAccessChild, canWriteToChild } from "@/lib/access";
+import { canAccessChild } from "@/lib/access";
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -15,7 +15,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const hasAccess = await canWriteToChild(userId, log.childId);
+    const hasAccess = await canAccessChild(userId, log.childId);
     if (!hasAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

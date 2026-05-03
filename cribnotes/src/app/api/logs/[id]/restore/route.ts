@@ -11,18 +11,13 @@ export async function POST(request: Request, { params }: { params: { id: string 
   try {
     const log = await prisma.log.findUnique({
       where: { id: params.id },
-      include: {
-        child: true,
-      },
     });
 
     if (!log) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const child = await prisma.child.findUnique({
-      where: { id: log.childId, ownerId: userId },
-    });
+    const child = await canAccessChild(userId, log.childId);
 
     if (!child) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

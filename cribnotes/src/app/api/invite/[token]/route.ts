@@ -25,6 +25,7 @@ export async function GET(request: Request, { params }: { params: { token: strin
     return NextResponse.json({
       childName: share.child.name,
       ownerName: owner?.name || "Someone",
+      email: share.email,
       role: share.role,
       expired: false,
     });

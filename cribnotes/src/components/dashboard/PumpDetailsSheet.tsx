@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
@@ -14,6 +14,13 @@ interface PumpDetailsSheetProps {
 
 function useLastPumpUnit() {
   const [unit, setUnit] = useState<"OZ" | "ML">("OZ");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("nw-lastPumpUnit");
+      if (saved === "OZ" || saved === "ML") setUnit(saved);
+    } catch {}
+  }, []);
 
   const saveUnit = (u: "OZ" | "ML") => {
     setUnit(u);

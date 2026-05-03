@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createLogSchema } from "@/lib/validations";
-import { canAccessChild, canWriteToChild } from "@/lib/access";
+import { canAccessChild } from "@/lib/access";
 import { Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createLogSchema.parse(body);
 
-    const child = await canWriteToChild(userId, data.childId);
+    const child = await canAccessChild(userId, data.childId);
     if (!child) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
