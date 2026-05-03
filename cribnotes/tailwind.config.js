@@ -7,7 +7,6 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        base: "#0b1120",
         background: "#0b1120",
         surface: "#161f33",
         elevated: "#1e2d47",
@@ -17,9 +16,9 @@ module.exports = {
         warning: "#fbbf24",
         danger: "#ef4444",
         "text-primary": "#f0f6ff",
-        "text-secondary": "#94a3b8",
-        "text-muted": "#475569",
-        border: "#1e3a5f",
+        "text-secondary": "#e2e8f0",
+        "text-muted": "#cbd5e1",
+        border: "#475569",
       },
       fontFamily: {
         display: ["DM Sans", "sans-serif"],
